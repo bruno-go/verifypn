@@ -101,8 +101,8 @@ namespace PetriEngine {
             if (lp == nullptr)
                 return lp;
 
-            const uint32_t nCol = _net->numberOfTransitions() + _net->numberOfPlaces();
-            const uint32_t nRow = _net->numberOfPlaces();
+            const uint32_t nCol = getNumBaseVariables();
+            const uint32_t nRow = getNumBaseConstraints();
             std::vector<int32_t> indir(std::max<uint32_t>(nCol, nRow) + 1);
 
             glp_add_cols(lp, nCol + 1);
@@ -140,7 +140,10 @@ namespace PetriEngine {
                         }
                         ++l;
                     }
-                    glp_set_mat_col(lp, t + 1, l - 1, indir.data(), col.data());
+                    //glp_set_mat_col(lp, t + 1, l - 1, indir.data(), col.data());
+
+                    addAllPathConstraint(lp, t, l, indir, col);
+
                     if (timeout()) {
                         std::cerr << "glpk: construction timeout" << std::endl;
                         glp_delete_prob(lp);
@@ -150,29 +153,53 @@ namespace PetriEngine {
             }
             int rowno = 1;
             std::vector<int> ind(2);
-            std::vector<double> vals = {0, 1.0};
-            for (size_t p = 0; p < _net->numberOfPlaces(); p++) {
-                const int colno = 1 + p + _net->numberOfTransitions();
-                ind[1] = p+1;
-                glp_set_mat_col(lp, colno, 1, ind.data(), vals.data());
-                glp_set_row_bnds(lp, rowno, GLP_LO, 0, infty);
-                ++rowno;
-                if (timeout()) {
-                    std::cerr << "glpk: construction timeout" << std::endl;
-                    glp_delete_prob(lp);
-                    return nullptr;
+            std::vector<double> one = {0, 1.0};
+            for(size_t path = 0; path < static_cast<size_t>(_num_paths); path++){
+                int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
+                int constraint_offset = path * _net->numberOfPlaces();
+                for (size_t p = 0; p < _net->numberOfPlaces(); p++) {
+                    const int colno = 1 + p + _net->numberOfTransitions() + path * variable_offset;
+                    ind[1] = p+1 + constraint_offset;
+                    glp_set_mat_col(lp, colno, 1, ind.data(), one.data());
+                    glp_set_row_bnds(lp, rowno, GLP_LO, 0, infty);
+                    ++rowno;
+
+                    glp_set_col_bnds(lp, colno, GLP_FX, (double) _marking[p], 0);
+                    glp_set_obj_coef(lp, colno, 0);
+                    glp_set_col_kind(lp, colno, GLP_IV);
+
+                    if (timeout()) {
+                        std::cerr << "glpk: construction timeout" << std::endl;
+                        glp_delete_prob(lp);
+                        return nullptr;
+                    }
                 }
             }
         
-            for(size_t p = 0; p < _net->numberOfPlaces(); p++){
+            /*for(size_t p = 0; p < _net->numberOfPlaces(); p++){
                 const int colno = 1 + p + _net->numberOfTransitions();
                 glp_set_col_bnds(lp, colno, GLP_FX, (double) _marking[p], 0);
                 glp_set_obj_coef(lp, colno, 0);
                 glp_set_col_kind(lp, colno, GLP_IV);
-            }
+            }*/
             
             return lp;
         }
+
+   
+    void SimplificationContext::addAllPathConstraint(glp_prob* lp, size_t t, size_t l, int32_t* ind_data, double* col_data) const{
+            std::vector<int32_t> indir_path(l);
+            for(size_t path = 0; path < static_cast<size_t>(_num_paths); path++){
+                int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
+                for(int i = 1; i < l; i++){
+                    indir_path[i] = ind_data[i] + path * _net->numberOfPlaces();
+                }
+                glp_set_mat_col(lp, t + 1 + variable_offset, l - 1, indir_path.data(), col_data);
+            }
+    }
+    void SimplificationContext::addAllPathConstraint(glp_prob* lp, size_t t, size_t l, std::vector<int32_t>& ind, std::vector<double>& col) const{
+        addAllPathConstraint(lp, t, l, ind.data(), col.data());
+    }
 
     glp_prob* SimplificationContext::buildBaseFromMarking(std::vector<std::pair<std::vector<uint32_t>, double>>& setMarking) const
         {

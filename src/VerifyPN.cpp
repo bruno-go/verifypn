@@ -580,8 +580,25 @@ void simplify_queries(const MarkVal* marking,
 
                     bool wasAGCPNApprox = dynamic_cast<NotCondition*> (queries[i].get()) != nullptr;
                     if (options.logic == TemporalLogic::LTL) {
+                        int num_paths = 0;
                         if (options.queryReductionTimeout == 0 || qt == 0) continue;
-                        SimplificationContext simplificationContext(marking, net, qt,
+
+                        if(auto path = dynamic_cast<PathQuant*>(queries[i].get())) {
+                            bool wasACond = path->is<AllPaths>();
+                            for(;path; path = dynamic_cast<PathQuant*>(path->child().get()))
+                            {
+                                if(wasACond != path->is<AllPaths>())
+                                {
+                                    std::stringstream ss;
+                                    queries[i]->toString(ss);
+                                    throw base_error("Missing Hyper-LTL quantifiers: ", ss.str());
+                                }
+                                num_paths++;
+                            }
+                        }
+                        num_paths = std::max(1, num_paths);
+                        std::cout << "Creating SimplificationContext with " << num_paths << " Hyper-Paths\n";
+                        SimplificationContext simplificationContext(marking, net, num_paths, qt,
                             options.lpsolveTimeout, options.lpPrintLevel, &cache);
                         if (simplificationContext.markingOutOfBounds()) {
                             std::cout << "WARNING: Initial marking contains a place or places with too many tokens. Query simplifaction for LTL is skipped.\n";

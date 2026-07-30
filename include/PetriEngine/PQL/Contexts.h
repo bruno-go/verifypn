@@ -181,13 +181,15 @@ namespace PetriEngine {
         public:
 
             SimplificationContext(const MarkVal* marking,
-                    const PetriNet* net, uint32_t queryTimeout, uint32_t lpTimeout, uint32_t lpPrintLevel,
+                    const PetriNet* net, int num_paths, uint32_t queryTimeout, uint32_t lpTimeout, uint32_t lpPrintLevel,
                     Simplification::LPCache* cache, uint32_t potencyTimeout = 0)
                     : _queryTimeout(queryTimeout), _lpTimeout(lpTimeout), _lpPrintLevel(lpPrintLevel),
                     _potencyTimeout(potencyTimeout) {
                 _negated = false;
                 _marking = marking;
                 _net = net;
+                _num_paths = num_paths;
+                std::cout << "paths: " << _num_paths << "\n";
                 _base_lp = buildBase();
                 _start = std::chrono::high_resolution_clock::now();
                 _cache = cache;
@@ -201,6 +203,10 @@ namespace PetriEngine {
                 _isDeadlocked = _net->deadlocked(_marking);
                 _id = std::chrono::system_clock::now();
             }
+
+            SimplificationContext(const MarkVal* marking,
+                    const PetriNet* net, uint32_t queryTimeout, uint32_t lpTimeout, uint32_t lpPrintLevel,
+                    Simplification::LPCache* cache, uint32_t potencyTimeout = 0) : SimplificationContext(marking, net, 1, queryTimeout, lpTimeout, lpPrintLevel, cache, potencyTimeout){};
 
             std::chrono::time_point<std::chrono::system_clock> _id;
 
@@ -257,16 +263,32 @@ namespace PetriEngine {
             uint32_t getPotencyTimeout() const;
             uint32_t getPrintLevel() const;
 
+            int numPaths() const{
+                return _num_paths;
+            }
+
+            uint32_t getNumBaseVariables() const{
+                return _num_paths * (_net->numberOfPlaces() + _net->numberOfTransitions());
+            }
+
+            uint32_t getNumBaseConstraints() const{
+                return _num_paths * _net->numberOfPlaces();
+            }
+
             Simplification::LPCache* cache() const
             {
                 return _cache;
             }
+
+            void addAllPathConstraint(glp_prob* lp, size_t t, size_t l, int32_t* ind, double* col) const;
+            void addAllPathConstraint(glp_prob* lp, size_t t, size_t l, std::vector<int32_t>& ind, std::vector<double>& col) const;
 
             glp_prob* makeBaseLP() const;
 
             glp_prob* buildBaseFromMarking(std::vector<std::pair<std::vector<uint32_t>, double>>& setMarking) const;
 
         private:
+            int _num_paths = 1;
             bool _negated;
             const MarkVal* _marking;
             bool _markingOutOfBounds;

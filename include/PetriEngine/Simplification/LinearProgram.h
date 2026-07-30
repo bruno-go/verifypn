@@ -14,6 +14,7 @@
 
 namespace PetriEngine {
     namespace Simplification {
+        using REAL = double;
 
         struct equation_t
         {
@@ -36,6 +37,11 @@ namespace PetriEngine {
             enum result_t { UKNOWN, IMPOSSIBLE, POSSIBLE };
             result_t _result = result_t::UKNOWN;
             std::vector<equation_t> _equations;
+
+            bool addEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, std::vector<equation_t>& equations);
+
+            bool solve_built_lp(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime, bool set_result, bool delete_lp = true);
+            
         public:
             void swap(LinearProgram& other)
             {

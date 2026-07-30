@@ -669,16 +669,50 @@ namespace PetriEngine { namespace PQL {
         }
     }
 
+    bool Simplifier::isNextImpossible(AbstractProgramCollection_ptr next_lps, bool strict){
+        if(strict){
+            bool nmore = false;
+            bool nsat = false;
+            next_lps->reset();
+            do{
+                nextProgram pn = next_lps->get_next_program();
+                SingleProgram* sn = dynamic_cast<SingleProgram*>(pn.prog.get());
+                if(!sn || !sn->getProgram().isNStepsImpossible(1, true, _context)){
+                    nsat = true;
+                }
+                nmore = pn.hasmore;
+            }while(nmore && !nsat);
+            next_lps->reset();
+            if(!nsat){
+                return true;
+            }
+        }else{
+            if(!next_lps->satisfiable(_context)){
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
     template<>
-    Retval Simplifier::simplify_simple_quantifier<XCondition>(Retval &r){
+    Retval Simplifier::simplify_simple_quantifier<XCondition>(Retval &r, bool strict){
         quantifier_found = LPQUANT::NEXT;
+        if(strict){
+            if(isNextImpossible(r.neglps, true)){
+                return Retval(BooleanCondition::TRUE_CONSTANT);
+            }
+            else if(isNextImpossible(r.lps, true)){
+                return Retval(BooleanCondition::FALSE_CONSTANT);
+            }
+        }
+
         if (r.formula->isTriviallyTrue() || !r.neglps->satisfiable(_context)) {
             return Retval(BooleanCondition::TRUE_CONSTANT);
         } else if (r.formula->isTriviallyFalse() || !r.lps->satisfiable(_context)) {
             return Retval(BooleanCondition::FALSE_CONSTANT);
-        } else {
-            return Retval(std::make_shared<XCondition>(r.formula), r.lps, r.neglps);
         }
+        return Retval(std::make_shared<XCondition>(r.formula), r.lps, r.neglps);
     }
 
     template<>
@@ -705,15 +739,20 @@ namespace PetriEngine { namespace PQL {
         }
     }
 
-    /*Member memberForPlace(size_t p, const SimplificationContext &context) {
-        std::vector<int64_t> row(context.net()->numberOfTransitions(), 0);
+    Member memberForTracePlace(size_t p, int cur_path, const SimplificationContext &context) {
+        std::vector<int64_t> row(( context.net()->numberOfTransitions() + context.net()->numberOfPlaces() ) * context.numPaths(), 0);
         row.shrink_to_fit();
+        std::cout << "creating member for p=" <<p<< "of trace " << cur_path << "\n";
+        int variable_offset = cur_path * ( context.net()->numberOfTransitions() + context.net()->numberOfPlaces() );
+        //std::cout << "current path: " << cur_path << "\n";
+        //std::cout << "Creating Constraint for place " << *context.net()->placeNames()[p].get() << " at " << "T" << cur_path << "\n";
         for (size_t t = 0; t < context.net()->numberOfTransitions(); t++) {
-            row[t] = context.net()->outArc(t, p);
-            row[t] -= context.net()->inArc(p, t);
+            row[t + variable_offset]  = context.net()->outArc(t, p);
+            row[t + variable_offset] -= context.net()->inArc(p, t);
         }
-        return Member(std::move(row), context.marking()[p]);
-    }*/
+        row[context.net()->numberOfTransitions() + variable_offset + p] = 1.0;
+        return Member(std::move(row), 0);
+    }
 
     Member memberForPlace(size_t p, const SimplificationContext &context) {
         std::vector<int64_t> row(context.net()->numberOfTransitions() + context.net()->numberOfPlaces(), 0);
@@ -742,8 +781,8 @@ namespace PetriEngine { namespace PQL {
         }
 
         for (auto &i: element->places()) {
-            if (first) res = memberForPlace(i.first, _context);
-            else op(res, memberForPlace(i.first, _context));
+            if (first) res = memberForTracePlace(i.first, _current_path, _context);
+            else op(res, memberForTracePlace(i.first, _current_path, _context));
             first = false;
         }
 
@@ -761,7 +800,7 @@ namespace PetriEngine { namespace PQL {
     }
 
     void ConstraintVisitor::_accept(const UnfoldedIdentifierExpr *element) {
-        _return_value = memberForPlace(element->offset(), _context);
+        _return_value = memberForTracePlace(element->offset(), _current_path, _context);
     }
 
     void ConstraintVisitor::_accept(const PlusExpr *element) {
@@ -797,10 +836,11 @@ namespace PetriEngine { namespace PQL {
     }
 
     void ConstraintVisitor::_accept(const PathSelectExpr *element) {
-        if(element->offset() != 0)
-            _return_value = Member(0, false);
-        else
-            Visitor::visit(*this, element->child());
+        _current_path = element->offset();
+        std::cout << "path = " << _current_path << "\n";
+        Visitor::visit(*this, element->child());
+        // todo: figure out if this is correct in all cases?
+        _current_path = 0;
     }
 
     /******* Simplifier accepts ********/
@@ -1023,6 +1063,11 @@ namespace PetriEngine { namespace PQL {
     }
 
     void Simplifier::_accept(const CompareConjunction *element) {
+        // this case is unclear to me in the hyperltl construction
+        assert(_context.numPaths() == 1);
+        if(_context.numPaths() != 1){
+            std::cout << "Warning: num paths != 1 in CompareConjunction\n";
+        }
         if (_context.timeout()) {
             RETURN(Retval(std::make_shared<CompareConjunction>(*element, _context.negated())))
         }
@@ -1448,8 +1493,10 @@ namespace PetriEngine { namespace PQL {
     void Simplifier::_accept(const XCondition *condition) {
         quantifiers++;
         quantifier_parent = LPQUANT::NEXT;
+        int32_t pre_quantifiers = quantifiers;
         Visitor::visit(this, condition->getCond());
-        RETURN(simplify_simple_quantifier<XCondition>(_return_value))
+        const bool is_strict_next = (quantifier_parent = LPQUANT::NONE) && (quantifiers == pre_quantifiers) && (!_context.isDeadlocked());
+        RETURN(simplify_simple_quantifier<XCondition>(_return_value, is_strict_next))
     }
 
     void Simplifier::_accept(const BooleanCondition *condition) {
