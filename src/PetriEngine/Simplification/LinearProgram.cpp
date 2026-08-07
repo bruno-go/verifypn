@@ -159,7 +159,8 @@ namespace PetriEngine {
             
         }
 
-        bool LinearProgram::addEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, std::vector<equation_t>& equations){
+        bool LinearProgram::addEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, std::vector<equation_t>& equations)
+        {
         glp_add_rows(lp, equations.size());
         for (const auto& eq : equations) {
             auto l = eq.row->write_indir(row, indir);
@@ -173,8 +174,7 @@ namespace PetriEngine {
                 {
                     if (eq.lower > eq.upper)
                     {
-                        _result = result_t::IMPOSSIBLE;
-                        glp_delete_prob(lp);
+                        //glp_delete_prob(lp);
                         return true;
                     }
                     glp_set_row_bnds(lp, rowno, GLP_DB, eq.lower, eq.upper);
@@ -189,7 +189,7 @@ namespace PetriEngine {
             if (context.timeout())
             {
                 // std::cerr << "glpk: construction timeout" << std::endl;
-                glp_delete_prob(lp);
+                //glp_delete_prob(lp);
                 return false;
             }
         }
@@ -207,7 +207,7 @@ namespace PetriEngine {
             settings.msg_lev = 0;
             auto result = glp_simplex(lp, &settings);
 
-            auto final_result = result_t::UKNOWN;
+            result_t final_result = result_t::UKNOWN;
 
             if (result == GLP_ETMLIM)
             {
@@ -254,14 +254,16 @@ namespace PetriEngine {
                 final_result = result_t::IMPOSSIBLE;
             }
 
-            if(delete_lp)
+            if(delete_lp){
                 glp_delete_prob(lp);
+            }
             
-            if(set_result)
+            if(set_result){
                 _result = final_result;
+            }
 
             return final_result == result_t::IMPOSSIBLE;
-        }   
+        } 
 
         bool LinearProgram::isImpossible(const PQL::SimplificationContext& context, uint32_t solvetime) {
             bool use_ilp = true;
@@ -294,7 +296,9 @@ namespace PetriEngine {
                 return false;
 
             int rowno = 1 + context.getNumBaseConstraints();
-            if(addEquations(lp, context, rowno, row, indir, _equations)){return true;}
+        
+            if(addEquations(lp, context, rowno, row, indir, _equations)){glp_delete_prob(lp);_result = result_t::IMPOSSIBLE;return true;}
+            if(context.timeout()){glp_delete_prob(lp);return false;}
 
             // Set objective, kind and bounds
             for(size_t path = 0; path < static_cast<size_t>(context.numPaths()); path++){
@@ -308,7 +312,7 @@ namespace PetriEngine {
             }
 
             printConstraints(context, lp);
-            std::cout << "impossible\n";
+            
             return solve_built_lp(lp, context, solvetime, true);
         }
         
@@ -337,7 +341,8 @@ namespace PetriEngine {
                 return false;
 
             int rowno = 1 + context.getNumBaseConstraints();
-            if(addEquations(lp, context, rowno, row, indir, _equations)){return true;}
+            if(addEquations(lp, context, rowno, row, indir, _equations)){glp_delete_prob(lp);return true;}
+            if(context.timeout()){glp_delete_prob(lp);return false;}
 
             // Set objective, kind and bounds
             for(size_t path = 0; path < static_cast<size_t>(context.numPaths()); path++){
@@ -368,8 +373,8 @@ namespace PetriEngine {
             std::vector<double> vals = {0, -1.0};
             // 'next marking' variables
             for(size_t path = 0; path < static_cast<size_t>(context.numPaths()); path++){
-                int variable_offset = path * ( net->numberOfPlaces() + net->numberOfTransitions() );
-                int constraint_offset = path * (net->numberOfPlaces());
+                const int variable_offset = path * ( net->numberOfPlaces() + net->numberOfTransitions() );
+                const int constraint_offset = path * (net->numberOfPlaces());
                 for(size_t p = 1; p <= net->numberOfPlaces(); p++){
                     const int colno = p + net->numberOfTransitions() + variable_offset + shift;
 
@@ -384,9 +389,6 @@ namespace PetriEngine {
                     glp_set_row_bnds(lp, p + constraint_offset, GLP_FX, 0, 0);
                 }
             }
-
-            std::cout << "past next marking\n";
-
 
             // copy translated version of base
             glp_add_rows(lp, context.getNumBaseConstraints());
@@ -407,8 +409,6 @@ namespace PetriEngine {
                 glp_set_row_bnds(lp, rowno, GLP_LO, 0, infty);
                 rowno++;
             }
-
-            std::cout << "past base\n";
 
             glp_add_rows(lp, withLp.size());
             for (const auto& eq : withLp.equations()) {
@@ -474,7 +474,8 @@ namespace PetriEngine {
             bool use_ilp = true;
             auto net = context.net();
 
-            std::stringstream ss;
+            //std::stringstream ss;
+            
 
             if (_equations.size() == 0 || context.timeout()){
                 return false;
@@ -484,8 +485,8 @@ namespace PetriEngine {
                 return false;
             }
 
-            const uint32_t nCol = net->numberOfTransitions() + net->numberOfPlaces();
-            const uint32_t nRow = net->numberOfPlaces() + _equations.size();
+            const uint32_t nCol = context.getNumBaseVariables();
+            const uint32_t nRow = context.getNumBaseConstraints() + _equations.size();
 
             std::vector<REAL> row = std::vector<REAL>(nCol + 1);
             std::vector<int32_t> indir(std::max(nCol, nRow) + 1);
@@ -496,23 +497,22 @@ namespace PetriEngine {
             if (lp == nullptr)
                 return false;
 
-            int rowno = 1 + net->numberOfPlaces();
+            int rowno = 1 + context.getNumBaseConstraints();
             glp_add_rows(lp, _equations.size());
 
-            int cno = 0;
-            glp_create_index(lp);
+            /*int cno = 0;
+            glp_create_index(lp);*/
 
             for (const auto& eq : _equations) {
                 auto l = eq.row->write_indir(row, indir);
                 assert(!(std::isinf(eq.upper) && std::isinf(eq.lower)));
                 glp_set_mat_row(lp, rowno, l-1, indir.data(), row.data());
 
-                std::stringstream().swap(ss);
+                /*std::stringstream().swap(ss);
 
                 ss << "C" << cno;
                 ++cno;
-
-                glp_set_row_name(lp, rowno, ss.str().c_str());
+                glp_set_row_name(lp, rowno, ss.str().c_str());*/
 
                 if (!std::isinf(eq.lower) && !std::isinf(eq.upper))
                 {
@@ -543,26 +543,33 @@ namespace PetriEngine {
             }
 
             // Set objective, kind and bounds
-            for (size_t i = 1; i <= net->numberOfTransitions(); i++) {
-                glp_set_obj_coef(lp, i, 1);
-                glp_set_col_kind(lp, i, use_ilp ? GLP_IV : GLP_CV);
-                glp_set_col_bnds(lp, i, GLP_LO, 0, infty);
+            for(size_t path = 0; path < static_cast<size_t>(context.numPaths()); path++){
+                int variable_offset = path * ( net->numberOfPlaces() + net->numberOfTransitions() );
+                for (size_t i = 1; i <= net->numberOfTransitions(); i++) {
+                    const int var = i + variable_offset;
+                    glp_set_obj_coef(lp, var, 1);
+                    glp_set_col_kind(lp, var, use_ilp ? GLP_IV : GLP_CV);
+                    glp_set_col_bnds(lp, var, GLP_LO, 0, infty);
+                }
             }
 
-            glp_add_rows(lp, 1);
-            for(size_t t = 0; t <= net->numberOfTransitions(); t++){
-                indir[t] = t;
-                row[t] = 1.0;
+            for(size_t path = 0; path < static_cast<size_t>(context.numPaths()); path++){
+                glp_add_rows(lp, 1);
+                int variable_offset = path * ( net->numberOfPlaces() + net->numberOfTransitions() );
+                for(size_t t = 1; t <= net->numberOfTransitions(); t++){
+                    indir[t] = t + variable_offset;
+                    row[t] = 1.0;
+                }
+                glp_set_mat_row(lp, rowno, net->numberOfTransitions(), indir.data(), row.data());
+                if(strict){
+                    glp_set_row_bnds(lp, rowno, GLP_FX, firelimit, firelimit);
+                }else{
+                    glp_set_row_bnds(lp, rowno, GLP_UP, -infty, firelimit);
+                }
+                ++rowno;
             }
-            glp_set_mat_row(lp, rowno, net->numberOfTransitions(), indir.data(), row.data());
-            if(strict){
-                glp_set_row_bnds(lp, rowno, GLP_FX, firelimit, firelimit);
-            }else{
-                glp_set_row_bnds(lp, rowno, GLP_UP, -infty, firelimit);
-            }
-            ++rowno;
 
-            printConstraints(context, lp);
+            //printConstraints(context, lp);
 
             return solve_built_lp(lp, context, solvetime, false);
         }

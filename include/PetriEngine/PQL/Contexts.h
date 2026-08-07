@@ -263,7 +263,7 @@ namespace PetriEngine {
             uint32_t getPotencyTimeout() const;
             uint32_t getPrintLevel() const;
 
-            int numPaths() const{
+            uint32_t numPaths() const{
                 return _num_paths;
             }
 
@@ -288,7 +288,7 @@ namespace PetriEngine {
             glp_prob* buildBaseFromMarking(std::vector<std::pair<std::vector<uint32_t>, double>>& setMarking) const;
 
         private:
-            int _num_paths = 1;
+            uint32_t _num_paths = 1;
             bool _negated;
             const MarkVal* _marking;
             bool _markingOutOfBounds;

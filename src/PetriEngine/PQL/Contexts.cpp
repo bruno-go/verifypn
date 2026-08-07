@@ -155,10 +155,10 @@ namespace PetriEngine {
             std::vector<int> ind(2);
             std::vector<double> one = {0, 1.0};
             for(size_t path = 0; path < static_cast<size_t>(_num_paths); path++){
-                int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
-                int constraint_offset = path * _net->numberOfPlaces();
+                const int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
+                const int constraint_offset = path * _net->numberOfPlaces();
                 for (size_t p = 0; p < _net->numberOfPlaces(); p++) {
-                    const int colno = 1 + p + _net->numberOfTransitions() + path * variable_offset;
+                    const int colno = 1 + p + _net->numberOfTransitions() + variable_offset;
                     ind[1] = p+1 + constraint_offset;
                     glp_set_mat_col(lp, colno, 1, ind.data(), one.data());
                     glp_set_row_bnds(lp, rowno, GLP_LO, 0, infty);
@@ -190,7 +190,7 @@ namespace PetriEngine {
     void SimplificationContext::addAllPathConstraint(glp_prob* lp, size_t t, size_t l, int32_t* ind_data, double* col_data) const{
             std::vector<int32_t> indir_path(l);
             for(size_t path = 0; path < static_cast<size_t>(_num_paths); path++){
-                int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
+                const int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
                 for(int i = 1; i < l; i++){
                     indir_path[i] = ind_data[i] + path * _net->numberOfPlaces();
                 }

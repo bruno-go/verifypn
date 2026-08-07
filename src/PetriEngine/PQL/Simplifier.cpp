@@ -150,16 +150,12 @@ namespace PetriEngine { namespace PQL {
                 bool nmore = false;
                 bool nsat = false;
                 next_lps[i]->reset();
-                std::cout << "merge: " << typeid(MergeCollection).name() << "\n";
-                std::cout << "union: " << typeid(UnionCollection).name() << "\n";
-                std::cout << "next lp[" << i << "] type" << typeid(next_lps[i]).name() << "\n";
                 do{
                     nextProgram pn = next_lps[i]->get_next_program();
                     SingleProgram* sn = dynamic_cast<SingleProgram*>(pn.prog.get());
                     if(!sn || !sn->getProgram().isNStepsImpossible(1, strictNext, _context)){
                         nsat = true;
                     }
-                    std::cout << "iter\n";
                     nmore = pn.hasmore;
                 }while(nmore && !nsat);
                 next_lps[i]->reset();
@@ -340,7 +336,7 @@ namespace PetriEngine { namespace PQL {
                 }
             }   
         }
-        std::cout << "end or\n";
+        //std::cout << "end or\n";
         //std::cout << "sizes  or: " << lps.size() << ", " << global_neglpsv.size() << ", " << nonglobal_neglpsv.size() << "\n";
         quantifier_found = LPQUANT::OTHER;
         if (conditions.size() == 0) {
@@ -416,7 +412,7 @@ namespace PetriEngine { namespace PQL {
     }
 
     Retval Simplifier::simplify_and(const LogicalCondition *element) {
-        std::cout << "simplifying and\n";
+        //std::cout << "simplifying and\n";
         std::vector<Condition_ptr> conditions;
         std::vector<AbstractProgramCollection_ptr> global_lpsv;
         std::vector<AbstractProgramCollection_ptr> final_lpsv;
@@ -429,16 +425,16 @@ namespace PetriEngine { namespace PQL {
         const bool parent_final = quantifier_parent == LPQUANT::FINAL;
         const bool parent_global = quantifier_parent == LPQUANT::GLOBAL;
         const bool is_invariant = (same_context && parent_global) || (!same_context && parent_final);
-        std::cout << "is final? " << std::boolalpha << parent_final << "\n";
+        /*std::cout << "is final? " << std::boolalpha << parent_final << "\n";
         std::cout << "is global? " << std::boolalpha << parent_global << "\n";
         std::cout << "is negated? " << std::boolalpha << _context.negated() << "\n";
-        std::cout << "is invariant? " << std::boolalpha << is_invariant << "\n";
+        std::cout << "is invariant? " << std::boolalpha << is_invariant << "\n";*/
         const auto local_parent = quantifier_parent;
 
         auto unique_quantifier = LPQUANT::NULLT;
 
         for (auto &c: element->getOperands()) {
-            std::cout << "operand\n";
+            //std::cout << "operand\n";
             quantifier_found = LPQUANT::NONE;
             int32_t pre_quantifiers = quantifiers;
             if(!is_invariant)
@@ -477,7 +473,7 @@ namespace PetriEngine { namespace PQL {
                         }
                         break;
                     case LPQUANT::GLOBAL:
-                    std::cout << "found global subcondition\n";
+                    //std::cout << "found global subcondition\n";
                         global_lpsv.emplace_back(r.lps);
                         break;
                     case LPQUANT::FINAL:
@@ -497,7 +493,7 @@ namespace PetriEngine { namespace PQL {
         }
 
         //std::cout << "sizes and: " << neglps.size() << ", " << global_lpsv.size() << ", " << nonglobal_lpsv.size() << "\n";
-        std::cout << "end and!\n";
+        //std::cout << "end and!\n";
 
         if(unique_quantifier == LPQUANT::NULLT || unique_quantifier == LPQUANT::OTHER){
             quantifier_found == LPQUANT::OTHER;
@@ -525,7 +521,7 @@ namespace PetriEngine { namespace PQL {
 
         if(final_lpsv.size() > 0){
             if(global_lp){
-                std::cout << "has global condition\n";
+                //std::cout << "has global condition\n";
                 for(int i = 0; i < final_lpsv.size(); i++){
                     final_lpsv[i] = std::make_shared<MergeCollection>(global_lp, final_lpsv[i]);
                 }
@@ -698,6 +694,7 @@ namespace PetriEngine { namespace PQL {
     template<>
     Retval Simplifier::simplify_simple_quantifier<XCondition>(Retval &r, bool strict){
         quantifier_found = LPQUANT::NEXT;
+        //std::cout << "has next\n";
         if(strict){
             if(isNextImpossible(r.neglps, true)){
                 return Retval(BooleanCondition::TRUE_CONSTANT);
@@ -742,10 +739,7 @@ namespace PetriEngine { namespace PQL {
     Member memberForTracePlace(size_t p, int cur_path, const SimplificationContext &context) {
         std::vector<int64_t> row(( context.net()->numberOfTransitions() + context.net()->numberOfPlaces() ) * context.numPaths(), 0);
         row.shrink_to_fit();
-        std::cout << "creating member for p=" <<p<< "of trace " << cur_path << "\n";
         int variable_offset = cur_path * ( context.net()->numberOfTransitions() + context.net()->numberOfPlaces() );
-        //std::cout << "current path: " << cur_path << "\n";
-        //std::cout << "Creating Constraint for place " << *context.net()->placeNames()[p].get() << " at " << "T" << cur_path << "\n";
         for (size_t t = 0; t < context.net()->numberOfTransitions(); t++) {
             row[t + variable_offset]  = context.net()->outArc(t, p);
             row[t + variable_offset] -= context.net()->inArc(p, t);
@@ -837,7 +831,7 @@ namespace PetriEngine { namespace PQL {
 
     void ConstraintVisitor::_accept(const PathSelectExpr *element) {
         _current_path = element->offset();
-        std::cout << "path = " << _current_path << "\n";
+    
         Visitor::visit(*this, element->child());
         // todo: figure out if this is correct in all cases?
         _current_path = 0;
