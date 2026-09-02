@@ -237,26 +237,34 @@ namespace PetriEngine::ExplicitColored {
             _copiedExpr = std::make_shared<PQL::LiteralExpr>(element->value());
         }
 
-        void _accept(const PQL::PlusExpr *element) override {
+        template<typename ExprType>
+        void copyCommutativeExpr(const PQL::CommutativeExpr* element, int64_t defaultConstant) {
             std::vector<PQL::Expr_ptr> copiedExpressions;
+            if (element->constant() != defaultConstant || (element->places().empty() && element->expressions().empty())) {
+                copiedExpressions.push_back(std::make_shared<PQL::LiteralExpr>(element->constant()));
+            }
+
+            for (const auto& [offset, name] : element->places()) {
+                copiedExpressions.push_back(std::make_shared<PQL::UnfoldedIdentifierExpr>(name, offset));
+            }
+            
             for (const auto& expr : element->expressions()) {
                 visit(this, expr);
                 copiedExpressions.push_back(_copiedExpr);
             }
-            _copiedExpr = std::make_shared<PQL::PlusExpr>(std::move(copiedExpressions));
+            _copiedExpr = std::make_shared<ExprType>(std::move(copiedExpressions));
+        }
+
+        void _accept(const PQL::PlusExpr *element) override {
+            copyCommutativeExpr<PQL::PlusExpr>(element, 0);
         }
 
         void _accept(const PQL::MultiplyExpr *element) override {
-            std::vector<PQL::Expr_ptr> copiedExpressions;
-            for (const auto& expr : element->expressions()) {
-                visit(this, expr);
-                copiedExpressions.push_back(_copiedExpr);
-            }
-            _copiedExpr = std::make_shared<PQL::MultiplyExpr>(std::move(copiedExpressions));
+            copyCommutativeExpr<PQL::MultiplyExpr>(element, 1);
         }
 
         void _accept(const PQL::MinusExpr *element) override {
-            visit(this, element);
+            visit(this, (*element)[0]);
             _copiedExpr = std::make_shared<PQL::MinusExpr>(_copiedExpr);
         }
 

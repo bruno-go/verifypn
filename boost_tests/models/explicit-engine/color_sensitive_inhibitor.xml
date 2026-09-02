@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<property-set xmlns="http://tapaal.net/">
+  <property>
+    <id>color-sensitive inhibitor</id>
+    <description>Only red tokens are inhibited</description>
+    <formula>
+      <exists-path>
+        <finally>
+          <integer-eq>
+            <tokens-count><place>Done</place></tokens-count>
+            <integer-constant>1</integer-constant>
+          </integer-eq>
+        </finally>
+      </exists-path>
+    </formula>
+  </property>
+  <property>
+    <id>matching color inhibits</id>
+    <description>A red token blocks an inhibitor arc selecting red</description>
+    <formula>
+      <exists-path>
+        <finally>
+          <integer-eq>
+            <tokens-count><place>Blocked</place></tokens-count>
+            <integer-constant>1</integer-constant>
+          </integer-eq>
+        </finally>
+      </exists-path>
+    </formula>
+  </property>
+</property-set>

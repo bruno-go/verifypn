@@ -151,7 +151,7 @@ namespace LTL {
 
                 if constexpr (SaveTrace) {
                     if (isnew) {
-                        seen.set_history(stateid, successorGenerator.fired());
+                        seen.set_history(stateid, cstack[dtop._pos]._stateid, dtop._sucinfo.transition());
                     }
                 }
 
@@ -176,7 +176,7 @@ namespace LTL {
                     }
                     // we found the successor, i.e. there's a loop!
                     // now update lowlinks and check whether the loop contains an accepting state
-                    update(cstack, dstack, successorGenerator, suc_pos);
+                    update(cstack, dstack, suc_pos);
                     continue;
                 }
                 if (!_store.exists(stateid).first) {
@@ -240,7 +240,7 @@ namespace LTL {
             _astack.pop_back();
         }
         if (!dstack.empty()) {
-            update(cstack, dstack, successorGenerator, p);
+            update(cstack, dstack, p);
             if constexpr (std::is_same<SuccGen, SpoolingSuccessorGenerator>::value) {
                 successorGenerator.pop(dstack.back()._sucinfo);
             }
@@ -257,8 +257,8 @@ namespace LTL {
     }
 
 
-    template<typename T, typename D, typename SuccGen>
-    void TarjanModelChecker::update(light_deque<T>& cstack, light_deque<D>& dstack, SuccGen& successorGenerator, idx_t to)
+    template<typename T, typename D>
+    void TarjanModelChecker::update(light_deque<T>& cstack, light_deque<D>& dstack, idx_t to)
     {
         const auto from = dstack.back()._pos;
         assert(cstack[to]._lowlink != std::numeric_limits<idx_t>::max() && cstack[from]._lowlink != std::numeric_limits<idx_t>::max());
@@ -270,9 +270,11 @@ namespace LTL {
             // either way update the component ID of the state we came from.
             cstack[from]._lowlink = cstack[to]._lowlink;
             if constexpr (T::save_trace()) {
-                _loop_state = cstack[to]._stateid;
-                _loop_trans = successorGenerator.fired();
                 cstack[to]._lowsource = from;
+                if (_violation) {
+                    _loop_state = cstack[to]._stateid;
+                    _loop_trans = dstack.back()._sucinfo.transition();
+                }
             }
         }
     }
@@ -334,8 +336,8 @@ namespace LTL {
                 p = cstack[p]._lowsource;
             }
         }
-        if(!had_deadlock && _loop_trans < _net.numberOfTransitions())
-        {
+
+        if(!had_deadlock && _loop_trans < _net.numberOfTransitions()) {
             assert(_loop_trans < _net.numberOfTransitions());
             _trace.push_back({_loop_trans});
         }

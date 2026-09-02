@@ -1,0 +1,14 @@
+<pnml>
+  <net id="Sudoku-PT-AN10-minimized" type="P/T net">
+    <place id="candidate_1" name="candidate_1" invariant="&lt; inf" initialMarking="1"/>
+    <place id="candidate_2" name="candidate_2" invariant="&lt; inf" initialMarking="1"/>
+    <transition player="0" id="select_1" name="select_1" urgent="false"/>
+    <transition player="0" id="select_2" name="select_2" urgent="false"/>
+    <inputArc source="candidate_1" target="select_1">
+      <inscription><value>1</value></inscription>
+    </inputArc>
+    <inputArc source="candidate_2" target="select_2">
+      <inscription><value>1</value></inscription>
+    </inputArc>
+  </net>
+</pnml>

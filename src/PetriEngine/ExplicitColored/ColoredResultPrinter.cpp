@@ -10,12 +10,13 @@ namespace PetriEngine::ExplicitColored {
         const ExplicitColoredTraceContext* trace
     ) const {
         _printCommon(result, {});
-        _stream << "STATS:" << std::endl
-                << "	discovered states:     " << searchStatistics.discoveredStates << std::endl
-                << "	explored states:       " << searchStatistics.exploredStates << std::endl
-                << "	peak waiting states:   " << searchStatistics.peakWaitingStates << std::endl
-                << "	end waiting states:    " << searchStatistics.endWaitingStates << std::endl
-                << "	biggest encoded state: " << searchStatistics.biggestEncoding << " bytes" << std::endl;
+        _stream << "STATS:\n"
+                << "	discovered states:     " << searchStatistics.discoveredStates << '\n'
+                << "	explored states:       " << searchStatistics.exploredStates << '\n'
+                << "	peak waiting states:   " << searchStatistics.peakWaitingStates << '\n'
+                << "	end waiting states:    " << searchStatistics.endWaitingStates << '\n'
+                << "	max tokens:            " << searchStatistics.maxTokens << '\n'
+                << "	biggest encoded state: " << searchStatistics.biggestEncoding << " bytes\n";
         if (trace != nullptr) {
             _printTrace(*trace);
         }
@@ -30,56 +31,56 @@ namespace PetriEngine::ExplicitColored {
         if (result == Reachability::AbstractHandler::Unknown) {
             return;
         }
-        std::cout << "FORMULA " << _queryName  << " ";
+        _stream << "FORMULA " << _queryName << " ";
         if (result == Reachability::AbstractHandler::Satisfied) {
-            std::cout << "TRUE ";
+            _stream << "TRUE ";
         } else if (result == Reachability::AbstractHandler::NotSatisfied) {
-            std::cout << "FALSE ";
+            _stream << "FALSE ";
         }
 
-        std::cout << "TECHNIQUES ";
+        _stream << "TECHNIQUES ";
         for (const auto& techniqueFlag : _techniqueFlags) {
-            std::cout << techniqueFlag << " ";
+            _stream << techniqueFlag << " ";
         }
 
         for (const auto& techniqueFlag : extraTechniques) {
-            std::cout << techniqueFlag << " ";
+            _stream << techniqueFlag << " ";
         }
 
-        std::cout << std::endl;
+        _stream << '\n';
         if (result == Reachability::AbstractHandler::Satisfied || result == Reachability::AbstractHandler::NotSatisfied) {
-            std::cout << "Query index " << _queryOffset << " was solved" << std::endl;
+            _stream << "Query index " << _queryOffset << " was solved\n";
         }
-        std::cout << std::endl;
+        _stream << '\n';
 
-        std::cout << "Query is ";
+        _stream << "Query is ";
         if (result == Reachability::AbstractHandler::NotSatisfied) {
-            std::cout << "NOT ";
+            _stream << "NOT ";
         }
 
-        std::cout << "satisfied" << std::endl;
+        _stream << "satisfied.\n";
     }
 
     void ColoredResultPrinter::_printTrace(const ExplicitColoredTraceContext& trace) const {
-        _traceStream << "Trace: " << std::endl;
-        _traceStream << "<trace>" << std::endl;
+        _traceStream << "Trace:\n";
+        _traceStream << "<trace>\n";
         for (const auto& step : trace.traceSteps) {
             if (!step.isInitial) {
-                _traceStream << "\t<transition id=" << std::quoted(step.transitionId) << ">" << std::endl;
-                _traceStream << "\t\t<bindings>" << std::endl;
+                _traceStream << "\t<transition id=" << std::quoted(step.transitionId) << ">\n";
+                _traceStream << "\t\t<bindings>" << '\n';
                 for (const auto& [variableId, value] : step.binding) {
-                    _traceStream << "\t\t\t<variable id=" << std::quoted(variableId) << ">" << std::endl;
-                    _traceStream << "\t\t\t\t<color>" << value << "</color>" << std::endl;
-                    _traceStream << "\t\t\t</variable>" << std::endl;
+                    _traceStream << "\t\t\t<variable id=" << std::quoted(variableId) << ">\n";
+                    _traceStream << "\t\t\t\t<color>" << value << "</color>\n";
+                    _traceStream << "\t\t\t</variable>\n";
                 }
-                _traceStream << "\t\t</bindings>" << std::endl;
-                _traceStream << "\t</transition>" << std::endl;
+                _traceStream << "\t\t</bindings>\n";
+                _traceStream << "\t</transition>\n";
             }
-            _traceStream << "\t<marking>" << std::endl;
+            _traceStream << "\t<marking>\n";
             _printMarkings(trace.cpnBuilder, step);
-            _traceStream << "\t</marking>" << std::endl;
+            _traceStream << "\t</marking>\n";
         }
-        _traceStream << "</trace>" << std::endl;
+        _traceStream << "</trace>\n";
     }
 
     void ColoredResultPrinter::_printMarkings(
@@ -135,11 +136,10 @@ namespace PetriEngine::ExplicitColored {
         {
             if (!traceTokens.empty())
             {
-                _traceStream << "\t\t<place id=" << std::quoted(place_id) << ">" << std::endl;
+                _traceStream << "\t\t<place id=" << std::quoted(place_id) << ">\n";
                 writer.writeInitialTokens(place_id);
-                _traceStream << "\t\t</place>" << std::endl;
+                _traceStream << "\t\t</place>\n";
             }
         }
     }
 }
-

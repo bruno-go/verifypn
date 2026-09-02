@@ -82,22 +82,23 @@ int main(int argc, const char** argv) {
         }
         options.print();
 
-        //----------------------- Parse Query -----------------------//
-        std::vector<std::string> querynames;
-        auto ctlStarQueries = readQueries(string_set, options, querynames);
-        auto queries = options.logic == TemporalLogic::CTL
-                       ? getCTLQueries(ctlStarQueries)
-                       : getLTLQueries(ctlStarQueries);
-
         ColoredPetriNetBuilder cpnBuilder(string_set);
         try {
             cpnBuilder.parse_model(options.modelfile);
             options.isCPN = cpnBuilder.isColored(); // TODO: this is really nasty, should be moved in a refactor
-            if (options.explicit_colored) {
-                return explicitColored(string_set, options, queries, querynames);
-            }
         } catch (const base_error &err) {
             throw base_error("CANNOT_COMPUTE\nError parsing the model\n", err.what());
+        }
+
+        //----------------------- Parse Query -----------------------//
+        std::vector<std::string> querynames;
+        auto ctlStarQueries = readQueries(string_set, options, querynames, &cpnBuilder);
+        auto queries = options.logic == TemporalLogic::CTL
+                       ? getCTLQueries(ctlStarQueries)
+                       : getLTLQueries(ctlStarQueries);
+
+        if (options.explicit_colored) {
+            return explicitColored(string_set, options, queries, querynames);
         }
 
         if (!options.model_col_out_file.empty() && cpnBuilder.hasPartition()) {

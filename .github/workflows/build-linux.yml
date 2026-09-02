@@ -13,34 +13,27 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v7.0.1
 
-      - name: Install Packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install flex libboost-all-dev bison
+    - name: Install dependencies
+      run: |
+        GCC_VERSION=$(sed -nE 's/^set\(DEFAULT_GCC_VERSION ([0-9]+)\)$/\1/p' CMakeLists.txt)
+        [[ $GCC_VERSION =~ ^[0-9]+$ ]]
+        sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+        sudo apt update
+        sudo apt install -f flex bison libboost-all-dev ninja-build "gcc-${GCC_VERSION}" "g++-${GCC_VERSION}"
 
-      - name: Test
-        run: |
-          mkdir -p build
-          cd build
-          CC=gcc-14 CXX=g++-14 cmake ../ -DCMAKE_BUILD_TYPE=Debug -DVERIFYPN_Static=OFF -DVERIFYPN_MC_Simplification=OFF -DVERIFYPN_TEST=ON
-          make -j$(nproc)
-          CTEST_OUTPUT_ON_FAILURE=1 make test
+    - name: Build Release
+      run: cmake --workflow release
 
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          # We create a static binary with parallel simplification - works both for the MCC competition as well as releases
-          CC=gcc-14 CXX=g++-14 cmake ../ -DCMAKE_BUILD_TYPE=Release -DVERIFYPN_Static=ON -DVERIFYPN_MC_Simplification=ON -DVERIFYPN_TEST=OFF
-          make -j$(nproc)
+    - name: Test
+      run: cmake --workflow test
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: verifypn-linux64
-          path: build/verifypn/bin/verifypn-linux64
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: verifypn-linux64
+        path: '${{github.workspace}}/build-release/verifypn/bin/verifypn-linux64'

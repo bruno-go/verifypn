@@ -31,6 +31,39 @@ BOOST_AUTO_TEST_CASE(DirectoryTest) {
     BOOST_REQUIRE(getenv("TEST_FILES"));
 }
 
+BOOST_AUTO_TEST_CASE(SudokuLTLFireabilityStubbornRegression) {
+    for (int queryReductionTimeout : {0, 10}) {
+        BOOST_TEST_CONTEXT("query reduction timeout " << queryReductionTimeout) {
+            auto [pn, conditions, qstrings] = load_pn(
+                "/models/sudoku_ltl_fireability.pnml",
+                "/models/sudoku_ltl_fireability.xml", {0}, TemporalLogic::LTL);
+
+            options_t options;
+            options.logic = TemporalLogic::LTL;
+            options.queryReductionTimeout = queryReductionTimeout;
+            options.printstatistics = StatisticsLevel::None;
+            std::ostringstream output;
+            simplify_queries(pn->initial(), pn.get(), conditions, options, output);
+
+            if (conditions[0]->isTriviallyFalse()) {
+                continue;
+            }
+
+            BOOST_REQUIRE(!conditions[0]->isTriviallyTrue());
+            auto query = prepareForReachability(conditions[0]);
+            BOOST_REQUIRE(query);
+
+            ResultHandler handler;
+            ReachabilitySearch search(*pn, handler, 0);
+            std::vector<Condition_ptr> queries{query};
+            std::vector<ResultPrinter::Result> results{ResultPrinter::Unknown};
+            search.reachable(queries, results, Strategy::DFS, true, false,
+                             StatisticsLevel::None, false, 0);
+            BOOST_REQUIRE_EQUAL(ResultPrinter::NotSatisfied, results[0]);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(AngiogenesisPT01ReachabilityCardinality, * utf::timeout(60)) {
 
     std::set<size_t> qnums{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};

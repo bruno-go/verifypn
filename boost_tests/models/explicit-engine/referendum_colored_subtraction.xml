@@ -22,4 +22,21 @@
       </exists-path>
     </formula>
   </property>
+
+  <property>
+    <id>Ten voting tokens are reachable</id>
+    <description>Ten voting tokens are reachable</description>
+    <formula>
+      <exists-path>
+        <finally>
+          <integer-eq>
+            <tokens-count>
+              <place>Referendum_colored_voting</place>
+            </tokens-count>
+            <integer-constant>10</integer-constant>
+          </integer-eq>
+        </finally>
+      </exists-path>
+    </formula>
+  </property>
 </property-set>

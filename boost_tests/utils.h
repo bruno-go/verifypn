@@ -111,7 +111,10 @@ auto load_explicit(const std::string& modelName, const std::string& queryName, c
 
     std::vector<std::string> querynames;
     shared_string_set sset;
-    auto ctlStarQueries = readQueries(sset, options, querynames);
+    ColoredPetriNetBuilder cpnBuilder(sset);
+    auto model = loadFile(modelName.data());
+    cpnBuilder.parse_model(model);
+    auto ctlStarQueries = readQueries(sset, options, querynames, &cpnBuilder);
     auto queries = options.logic == TemporalLogic::CTL
                     ? getCTLQueries(ctlStarQueries)
                     : getLTLQueries(ctlStarQueries);
@@ -196,4 +199,3 @@ auto singleQueryExpect(
 }
 
 #endif /* UTILS_H */
-

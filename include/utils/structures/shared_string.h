@@ -46,4 +46,3 @@ typedef std::unordered_set<shared_const_string, shared_ops<const_string>, shared
 
 
 #endif /* SHARED_STRING_H */
-

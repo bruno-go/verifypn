@@ -24,6 +24,7 @@
 #include "utils.h"
 #include "LTL/LTLSearch.h"
 #include "CTL/SearchStrategy/HeuristicSearch.h"
+#include "PetriEngine/SuccessorGenerator.h"
 
 using namespace PetriEngine;
 using namespace PetriEngine::Colored;
@@ -31,6 +32,77 @@ namespace utf = boost::unit_test;
 
 BOOST_AUTO_TEST_CASE(DirectoryTest) {
     BOOST_REQUIRE(getenv("TEST_FILES"));
+}
+
+static Structures::State replay_trace(
+    const PetriNet& net, const std::vector<std::vector<uint32_t>>& trace)
+{
+    Structures::State state;
+    state.setMarking(net.makeInitialMarking());
+    SuccessorGenerator successor(net);
+    for (const auto& step : trace) {
+        BOOST_REQUIRE_EQUAL(step.size(), 1);
+        const auto transition = step.front();
+        BOOST_REQUIRE_LT(transition, net.numberOfTransitions());
+        successor.prepare(state);
+        BOOST_REQUIRE(successor.checkPreset(transition));
+        successor.consumePreset(state, transition);
+        successor.producePostset(state, transition);
+    }
+    return state;
+}
+
+BOOST_AUTO_TEST_CASE(TarjanTraceUsesActualParentsAndTransitions) {
+    auto [pn, conditions, qstrings] = load_pn(
+        "/models/tarjan_trace.pnml", "/models/tarjan_trace.xml", {0}, TemporalLogic::LTL);
+    LTL::LTLSearch search(*pn, conditions[0], LTL::BuchiOptimization::Low, LTL::APCompression::None);
+
+    BOOST_REQUIRE(search.solve(true, 10, LTL::Algorithm::Tarjan, LTL::LTLPartialOrder::Automaton,
+                               Strategy::HEUR, LTL::LTLHeuristic::Automaton, true));
+
+    const auto& trace = search.raw_trace();
+    BOOST_REQUIRE(!trace.empty());
+
+    size_t buffer = 0;
+    while (buffer < pn->numberOfPlaces() && *pn->placeNames()[buffer] != "buffer") {
+        ++buffer;
+    }
+    
+    BOOST_REQUIRE_LT(buffer, pn->numberOfPlaces());
+
+    auto state = replay_trace(*pn, trace);
+    BOOST_REQUIRE_EQUAL(state.marking()[buffer], 0);
+}
+
+BOOST_AUTO_TEST_CASE(ExportedTraceCasesMatchNDFSAndTarjan) {
+    struct TraceCase {
+        const char* model;
+        const char* query;
+        uint64_t k_bound;
+        Strategy strategy;
+    };
+    const TraceCase cases[] = {
+        {"/models/wolf_goat_cabbage.pnml", "/models/wolf_goat_cabbage.xml", 9, Strategy::DFS},
+        {"/models/tarjan_lasso.pnml", "/models/tarjan_lasso.xml", 10, Strategy::DFS},
+        {"/models/man_wolf_goat_cabbage.pnml", "/models/man_wolf_goat_cabbage.xml",
+            8, Strategy::HEUR},
+    };
+
+    for (const auto& test : cases) {
+        BOOST_TEST_CONTEXT(test.model) {
+            auto [pn, conditions, qstrings] = load_pn(test.model, test.query, {0}, TemporalLogic::LTL);
+            for (const auto algorithm : {LTL::Algorithm::NDFS, LTL::Algorithm::Tarjan}) {
+                LTL::LTLSearch search(
+                    *pn, conditions[0], LTL::BuchiOptimization::Low, LTL::APCompression::None);
+                BOOST_REQUIRE(search.solve(true, test.k_bound, algorithm,
+                    LTL::LTLPartialOrder::Automaton, test.strategy,
+                    LTL::LTLHeuristic::Automaton, true));
+                const auto& trace = search.raw_trace();
+                BOOST_REQUIRE(!trace.empty());
+                replay_trace(*pn, trace);
+            }
+        }
+    }
 }
 
 BOOST_AUTO_TEST_CASE(AngiogenesisPT01LTLCardinality, * utf::timeout(300)) {

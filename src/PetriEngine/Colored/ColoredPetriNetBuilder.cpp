@@ -101,7 +101,7 @@ namespace PetriEngine {
     }
 
     void ColoredPetriNetBuilder::addInputArc(const std::string& place, const std::string& transition, const Colored::ArcExpression_ptr& expr, uint32_t inhib_weight) {
-        assert((expr == nullptr) != (inhib_weight == 0));
+        assert(inhib_weight > 0 || expr != nullptr);
         addArc(place, transition, expr, true, inhib_weight);
     }
 
@@ -129,7 +129,7 @@ namespace PetriEngine {
         assert(p < _places.size());
 
         if (!input) assert(expr != nullptr);
-        assert((expr == nullptr) != (inhib_weight == 0));
+        assert(inhib_weight > 0 || expr != nullptr);
 
         // Modify arc if it already exists
         if (inhib_weight > 0) {

@@ -1,0 +1,51 @@
+<pnml>
+<net id="ColorSensitiveInhibitor" type="P/T net">
+<declaration><structure><declarations>
+<namedsort id="dot" name="dot"><dot/></namedsort>
+<namedsort id="colors" name="colors"><cyclicenumeration><feconstant id="red" name="red"/><feconstant id="blue" name="blue"/></cyclicenumeration></namedsort>
+</declarations></structure></declaration>
+<place id="P" name="P" initialMarking="3">
+<type><text>colors</text><structure><usersort declaration="colors"/></structure></type>
+<hlinitialMarking><text>1'red + 2'blue</text><structure><add>
+<subterm><numberof><subterm><numberconstant value="1"><positive/></numberconstant></subterm><subterm><useroperator declaration="red"/></subterm></numberof></subterm>
+<subterm><numberof><subterm><numberconstant value="2"><positive/></numberconstant></subterm><subterm><useroperator declaration="blue"/></subterm></numberof></subterm>
+</add></structure></hlinitialMarking>
+</place>
+<place id="Done" name="Done" initialMarking="0">
+<type><text>dot</text><structure><usersort declaration="dot"/></structure></type>
+</place>
+<place id="Blocked" name="Blocked" initialMarking="0">
+<type><text>dot</text><structure><usersort declaration="dot"/></structure></type>
+</place>
+<transition player="0" id="T" name="T"><placeHolder/></transition>
+<inhibitorArc source="P" target="T">
+<inscription><value>2</value></inscription>
+<hlinscription><text>2'red</text><structure><numberof>
+<subterm><numberconstant value="2"><positive/></numberconstant></subterm>
+<subterm><useroperator declaration="red"/></subterm>
+</numberof></structure></hlinscription>
+</inhibitorArc>
+<outputArc source="T" target="Done">
+<inscription><value>1</value></inscription>
+<hlinscription><text>1'dot</text><structure><numberof>
+<subterm><numberconstant value="1"><positive/></numberconstant></subterm>
+<subterm><dotconstant/></subterm>
+</numberof></structure></hlinscription>
+</outputArc>
+<transition player="0" id="TBlocked" name="TBlocked"><placeHolder/></transition>
+<inhibitorArc source="P" target="TBlocked">
+<inscription><value>1</value></inscription>
+<hlinscription><text>1'red</text><structure><numberof>
+<subterm><numberconstant value="1"><positive/></numberconstant></subterm>
+<subterm><useroperator declaration="red"/></subterm>
+</numberof></structure></hlinscription>
+</inhibitorArc>
+<outputArc source="TBlocked" target="Blocked">
+<inscription><value>1</value></inscription>
+<hlinscription><text>1'dot</text><structure><numberof>
+<subterm><numberconstant value="1"><positive/></numberconstant></subterm>
+<subterm><dotconstant/></subterm>
+</numberof></structure></hlinscription>
+</outputArc>
+</net>
+</pnml>

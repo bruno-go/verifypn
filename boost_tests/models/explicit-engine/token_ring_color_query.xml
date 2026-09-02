@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<property-set xmlns="http://tapaal.net/">
+  
+  <property>
+    <id>Is this reachable?</id>
+    <description>Is this reachable?</description>
+    <formula>
+      <exists-path>
+        <finally>
+          <conjunction>
+            <integer-eq>
+              <tokens-count>
+                <place>
+                  TokenRing_dash_COL_dash_005__state
+                  <color-expression>
+                    <tuple>
+                      <color id="process2"/>
+                      <color id="process3"/>
+                    </tuple>
+                  </color-expression>
+                </place>
+              </tokens-count>
+              <integer-constant>1</integer-constant>
+            </integer-eq>
+            <integer-eq>
+              <tokens-count>
+                <place>
+                  TokenRing_dash_COL_dash_005__P0
+                  <color-expression>
+                    <color id="dot"/>
+                  </color-expression>
+                </place>
+              </tokens-count>
+              <integer-constant>5</integer-constant>
+            </integer-eq>
+          </conjunction>
+        </finally>
+      </exists-path>
+    </formula>
+  </property>
+</property-set>

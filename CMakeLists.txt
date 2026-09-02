@@ -1,14 +1,48 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.31)
+
+set(DEFAULT_GCC_VERSION 16)
 
 ## Default to release builds, must be set before project
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Project Definition
 set(VERIFYPN_NAME "verifypn")
-set(VERIFYPN_VERSION 4.4.1)
+set(VERIFYPN_VERSION 4.4.2)
+
+# Select GCC compiler
+set(DESIRED_GCC_VERSION "$ENV{GCC_VERSION}")
+if (DESIRED_GCC_VERSION STREQUAL "")
+    set(DESIRED_GCC_VERSION ${DEFAULT_GCC_VERSION})
+endif()
+
+if (NOT CMAKE_C_COMPILER)
+    find_program(GCC_REQ_C NAMES "gcc-${DESIRED_GCC_VERSION}" gcc REQUIRED)
+    set(CMAKE_C_COMPILER "${GCC_REQ_C}" CACHE STRING "C compiler")
+endif()
+
+if (NOT CMAKE_CXX_COMPILER)
+    find_program(GCC_REQ_CXX NAMES "g++-${DESIRED_GCC_VERSION}" g++ REQUIRED)
+    set(CMAKE_CXX_COMPILER "${GCC_REQ_CXX}" CACHE STRING "CXX compiler")
+endif()
+
 project(${VERIFYPN_NAME} VERSION ${VERIFYPN_VERSION} LANGUAGES CXX C)
+
+if (NOT CMAKE_C_COMPILER_ID STREQUAL "GNU" OR NOT CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    message(FATAL_ERROR "GCC is required, but found ${CMAKE_C_COMPILER_ID} and ${CMAKE_CXX_COMPILER_ID}")
+endif()
+
+if (NOT CMAKE_CROSSCOMPILING)
+    if (NOT CMAKE_C_COMPILER_VERSION MATCHES "^${DESIRED_GCC_VERSION}([.].*)?$")
+        message(FATAL_ERROR "GCC ${DESIRED_GCC_VERSION} is required, but found GCC ${CMAKE_C_COMPILER_VERSION}")
+    endif()
+    if (NOT CMAKE_CXX_COMPILER_VERSION MATCHES "^${DESIRED_GCC_VERSION}([.].*)?$")
+        message(FATAL_ERROR "G++ ${DESIRED_GCC_VERSION} is required, but found G++ ${CMAKE_CXX_COMPILER_VERSION}")
+    endif()
+endif()
 
 # C++ Definition
 set(CMAKE_CXX_STANDARD 17)
@@ -74,6 +108,11 @@ if (VERIFYPN_GetDependencies)
     endif()
 
     include(ExternalProject)
+    include(ProcessorCount)
+    ProcessorCount(DEPENDENCY_JOBS)
+    if (NOT DEPENDENCY_JOBS)
+        set(DEPENDENCY_JOBS 1)
+    endif()
     # Install location should be ${EXTERNAL_INSTALL_LOCATION}
 
     ExternalProject_add(ptrie-ext
@@ -84,64 +123,72 @@ if (VERIFYPN_GetDependencies)
     ExternalProject_add(rapidxml-ext
         URL https://downloads.sourceforge.net/project/rapidxml/rapidxml/rapidxml%201.13/rapidxml-1.13.zip
         URL_HASH SHA512=6c10583e6631ccdb0217d0a5381172cb4c1046226de6ef1acf398d85e81d145228e14c3016aefcd7b70a1db8631505b048d8b4f5d4b0dbf1811d2482eefdd265
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
         BUILD_COMMAND ""
         CONFIGURE_COMMAND mkdir -p ${CMAKE_BINARY_DIR}/external/include
         INSTALL_COMMAND cd ../rapidxml-ext && ${CMAKE_COMMAND} -E copy rapidxml.hpp rapidxml_iterators.hpp rapidxml_print.hpp rapidxml_utils.hpp ${EXTERNAL_INSTALL_LOCATION}/include
     )
 
     if (WIN32) #If windows 32 or 64
-      set(GLPK_CFLAGS "-D __WOE__ -O3" )
+      set(GLPK_CFLAGS "-D __WOE__ -O3 -std=gnu17" )
       set(HOST "--host=x86_64-w64-mingw32")
       message("Windows")
     else(WIN32)
-      set(GLPK_CFLAGS "-O3" )
+      set(GLPK_CFLAGS "-O3 -std=gnu17" )
     endif(WIN32)
 
     if (UNIX AND NOT APPLE)
         ExternalProject_add(spot-ext
             URL http://www.lrde.epita.fr/dload/spot/spot-2.11.3.tar.gz
             URL_HASH SHA512=bb838b5a5eb772f31f1e39389d27f5e6b478713040cd6609a76c534afb491bc477d54f7fa8c7c4800efae74259781fddeff2854f601b685745797faaf7998d20
-            BUILD_COMMAND cd lib && make COMMAND cd buddy && make COMMAND cd picosat && make COMMAND cd ltdl && make COMMAND cd spot && make
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            BUILD_COMMAND make -j${DEPENDENCY_JOBS} -C lib COMMAND make -j${DEPENDENCY_JOBS} -C buddy COMMAND make -j${DEPENDENCY_JOBS} -C picosat COMMAND make -j${DEPENDENCY_JOBS} -C ltdl COMMAND make -j${DEPENDENCY_JOBS} -C spot
             CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure --prefix ${EXTERNAL_INSTALL_LOCATION} --disable-python --disable-devel --disable-debug --disable-shared --enable-static --enable-c++17 CFLAGS=-flto CXXFLAGS=-flto LDFLAGS=-fuse-linker-plugin
-            INSTALL_COMMAND cd lib && make install COMMAND cd buddy && make install COMMAND cd picosat && make install COMMAND cd ltdl && make install COMMAND cd spot && make install
+            INSTALL_COMMAND make -C lib install COMMAND make -C buddy install COMMAND make -C picosat install COMMAND make -C ltdl install COMMAND make -C spot install
+            PATCH_COMMAND patch -p1 < ${PROJECT_SOURCE_DIR}/spot-gcc16.patch
         )
     elseif (APPLE)
         ExternalProject_add(spot-ext
             URL http://www.lrde.epita.fr/dload/spot/spot-2.11.3.tar.gz
             URL_HASH SHA512=bb838b5a5eb772f31f1e39389d27f5e6b478713040cd6609a76c534afb491bc477d54f7fa8c7c4800efae74259781fddeff2854f601b685745797faaf7998d20
-            BUILD_COMMAND cd lib && make COMMAND cd buddy && make COMMAND cd picosat && make COMMAND cd ltdl && make COMMAND cd spot && make
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            BUILD_COMMAND make -j${DEPENDENCY_JOBS} -C lib COMMAND make -j${DEPENDENCY_JOBS} -C buddy COMMAND make -j${DEPENDENCY_JOBS} -C picosat COMMAND make -j${DEPENDENCY_JOBS} -C ltdl COMMAND make -j${DEPENDENCY_JOBS} -C spot
             CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure --prefix ${EXTERNAL_INSTALL_LOCATION} --disable-python --disable-devel --disable-debug --disable-shared --enable-static --enable-c++17 CFLAGS=${CMAKE_CXX_FLAGS} LDFLAGS=${CMAKE_LINKER_FLAGS}
-            INSTALL_COMMAND cd lib && make install COMMAND cd buddy && make install COMMAND cd picosat && make install COMMAND cd ltdl && make install COMMAND cd spot && make install
+            INSTALL_COMMAND make -C lib install COMMAND make -C buddy install COMMAND make -C picosat install COMMAND make -C ltdl install COMMAND make -C spot install
+            PATCH_COMMAND patch -p1 < ${PROJECT_SOURCE_DIR}/spot-gcc16.patch
         )
     else ()
         ExternalProject_add(spot-ext
             URL http://www.lrde.epita.fr/dload/spot/spot-2.11.3.tar.gz
             URL_HASH SHA512=bb838b5a5eb772f31f1e39389d27f5e6b478713040cd6609a76c534afb491bc477d54f7fa8c7c4800efae74259781fddeff2854f601b685745797faaf7998d20
-            BUILD_COMMAND cd lib && make COMMAND cd buddy && make COMMAND cd picosat && make COMMAND cd ltdl && make COMMAND cd spot && make
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            BUILD_COMMAND make -j${DEPENDENCY_JOBS} -C lib COMMAND make -j${DEPENDENCY_JOBS} -C buddy COMMAND make -j${DEPENDENCY_JOBS} -C picosat COMMAND make -j${DEPENDENCY_JOBS} -C ltdl COMMAND make -j${DEPENDENCY_JOBS} -C spot
             CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure --prefix ${EXTERNAL_INSTALL_LOCATION} --disable-python --disable-devel --disable-debug --disable-shared --enable-static --enable-c++17 CFLAGS=${CMAKE_CXX_FLAGS} LDFLAGS=${CMAKE_LINKER_FLAGS} --host=x86_64-w64-mingw32
-            INSTALL_COMMAND cd lib && make install COMMAND cd buddy && make install COMMAND cd picosat && make install COMMAND cd ltdl && make install COMMAND cd spot && make install
-            PATCH_COMMAND patch -p1 < ${PROJECT_SOURCE_DIR}/spot-windows.patch
+            INSTALL_COMMAND make -C lib install COMMAND make -C buddy install COMMAND make -C picosat install COMMAND make -C ltdl install COMMAND make -C spot install
+            PATCH_COMMAND patch -p1 < ${PROJECT_SOURCE_DIR}/spot-gcc16.patch COMMAND patch -p1 < ${PROJECT_SOURCE_DIR}/spot-windows.patch
         )
 
     endif ()
 
     if (WIN32) #If windows 32 or 64
-        set(GLPK_CFLAGS "-D __WOE__ -O3" )
+        set(GLPK_CFLAGS "-D __WOE__ -O3 -std=gnu17" )
         ExternalProject_add(glpk-ext
             URL https://ftp.gnu.org/gnu/glpk/glpk-5.0.tar.gz
             URL_HASH SHA512=4e92195fa058c707146f2690f3a38b46c33add948c852f67659ca005a6aa980bbf97be96528b0f8391690facb880ac2126cd60198c6c175e7f3f06cca7e29f9d
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
             CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure --enable-shared=no --prefix=${EXTERNAL_INSTALL_LOCATION} CFLAGS=${GLPK_CFLAGS} --host=x86_64-w64-mingw32
-            BUILD_COMMAND make
+            BUILD_COMMAND make -j${DEPENDENCY_JOBS}
             INSTALL_COMMAND make install
         )
 
     else()
-        set(GLPK_CFLAGS "-O3" )
+        set(GLPK_CFLAGS "-O3 -std=gnu17" )
         ExternalProject_add(glpk-ext
             URL https://ftp.gnu.org/gnu/glpk/glpk-5.0.tar.gz
             URL_HASH SHA512=4e92195fa058c707146f2690f3a38b46c33add948c852f67659ca005a6aa980bbf97be96528b0f8391690facb880ac2126cd60198c6c175e7f3f06cca7e29f9d
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
             CONFIGURE_COMMAND CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} <SOURCE_DIR>/configure --enable-shared=no --prefix=${EXTERNAL_INSTALL_LOCATION} CFLAGS=${GLPK_CFLAGS}
-            BUILD_COMMAND make
+            BUILD_COMMAND make -j${DEPENDENCY_JOBS}
             INSTALL_COMMAND make install
         )
 

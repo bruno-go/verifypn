@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<property-set xmlns="http://tapaal.net/">
+  
+  <property>
+    <id>Query Comment/Name Here</id>
+    <description>Query Comment/Name Here</description>
+    <formula>
+      <exists-path>
+        <until>
+          <before>
+            <negation>
+              <disjunction>
+                <is-fireable>
+                  <transition>Eat_Wolf__WG_EAT_L_T</transition>
+                </is-fireable>
+                <is-fireable>
+                  <transition>Eat_Wolf__WG_EAT_R_T</transition>
+                </is-fireable>
+                <is-fireable>
+                  <transition>Eat_Goat__GC_EAT_R_T</transition>
+                </is-fireable>
+                <is-fireable>
+                  <transition>Eat_Goat__GC_EAT_L_T</transition>
+                </is-fireable>
+              </disjunction>
+            </negation>
+          </before>
+          <reach>
+            <conjunction>
+              <integer-eq>
+                <tokens-count>
+                  <place>Shared__Man_R</place>
+                </tokens-count>
+                <integer-constant>1</integer-constant>
+              </integer-eq>
+              <integer-eq>
+                <tokens-count>
+                  <place>Shared__Wolf_R</place>
+                </tokens-count>
+                <integer-constant>1</integer-constant>
+              </integer-eq>
+              <integer-eq>
+                <tokens-count>
+                  <place>Shared__Goat_R</place>
+                </tokens-count>
+                <integer-constant>1</integer-constant>
+              </integer-eq>
+              <integer-eq>
+                <tokens-count>
+                  <place>Shared__Cabbage_R</place>
+                </tokens-count>
+                <integer-constant>1</integer-constant>
+              </integer-eq>
+            </conjunction>
+          </reach>
+        </until>
+      </exists-path>
+    </formula>
+  </property>
+</property-set>
+

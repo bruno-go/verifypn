@@ -1,0 +1,26 @@
+<pnml>
+<net id="ComposedModel" type="P/T net">
+<place id="P0" name="P0" invariant="&lt; inf" initialMarking="1"><graphics><position x="0" y="0"/></graphics></place>
+<place id="P1" name="P1" invariant="&lt; inf" initialMarking="0"><graphics><position x="0" y="0"/></graphics></place>
+<place id="P2" name="P2" invariant="&lt; inf" initialMarking="1"><graphics><position x="0" y="0"/></graphics></place>
+<place id="P3" name="P3" invariant="&lt; inf" initialMarking="0"><graphics><position x="0" y="0"/></graphics></place>
+<place id="buffer" name="buffer" invariant="&lt; inf" initialMarking="0"><graphics><position x="0" y="0"/></graphics></place>
+<place id="supply" name="supply" invariant="&lt; inf" initialMarking="4"><graphics><position x="0" y="0"/></graphics></place>
+<transition player="0" id="T0" name="T0" urgent="false"><graphics><position x="0" y="0"/></graphics></transition>
+<transition player="0" id="T1" name="T1" urgent="false"><graphics><position x="0" y="0"/></graphics></transition>
+<transition player="0" id="T2" name="T2" urgent="false"><graphics><position x="0" y="0"/></graphics></transition>
+<transition player="0" id="T3" name="T3" urgent="false"><graphics><position x="0" y="0"/></graphics></transition>
+<inputArc source="P0" target="T0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="P1" target="T1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="P2" target="T2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="P3" target="T3"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="buffer" target="T2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="supply" target="T0"><inscription><value>1</value></inscription></inputArc>
+<outputArc source="T0" target="P1"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="T1" target="P0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="T2" target="P3"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="T3" target="P2"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="T0" target="buffer"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="T2" target="supply"><inscription><value>1</value></inscription></outputArc>
+</net>
+</pnml>

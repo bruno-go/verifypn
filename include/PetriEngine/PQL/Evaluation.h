@@ -29,7 +29,7 @@ namespace PetriEngine { namespace PQL {
 
     class ExprEvalVisitor : public ExpressionVisitor {
     public:
-        explicit ExprEvalVisitor(const EvaluationContext& context) : _context(context) {}
+        explicit ExprEvalVisitor(const EvaluationContext& context, size_t offset = 0) : _context(context), _offset(offset) {}
         virtual void _accept(const PlusExpr *element) override final;
 
         virtual void _accept(const MultiplyExpr *element) override final;
@@ -47,6 +47,9 @@ namespace PetriEngine { namespace PQL {
         virtual void _accept(const PathSelectExpr *element) override final;
 
         int64_t value() const { return _value; }
+        size_t offset() const { return _offset; }
+        const MarkVal* marking() const { return _context.marking(_offset); }
+        MarkVal tokens(size_t place) const { return _context.tokens(place, _offset); }
     protected:
         const EvaluationContext& _context;
         int64_t _value = 0;
@@ -57,6 +60,9 @@ namespace PetriEngine { namespace PQL {
     public:
         Condition::Result get_return_value() { return _return_value; }
         const EvaluationContext& context() const { return _context; }
+        size_t offset() const { return _offset; }
+        const MarkVal* marking() const { return _context.marking(_offset); }
+        MarkVal tokens(size_t place) const { return _context.tokens(place, _offset); }
     protected:
         explicit BaseEvaluationVisitor(const EvaluationContext& context) : _context(context) {}
 
@@ -74,7 +80,7 @@ namespace PetriEngine { namespace PQL {
     protected:
         const EvaluationContext& _context;
         Condition::Result _return_value = Condition::RUNKNOWN;
-        size_t _offset;
+        size_t _offset = 0;
     };
 
     int64_t evaluate(Expr *element, const EvaluationContext& context);

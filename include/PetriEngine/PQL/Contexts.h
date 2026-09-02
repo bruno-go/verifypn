@@ -119,15 +119,31 @@ namespace PetriEngine {
 
             /** Create evaluation context, this doesn't take ownership */
             EvaluationContext(const MarkVal* marking,
-                    const PetriNet* net) {
+                    const PetriNet* net,
+                    size_t traces = 1) {
                 _marking = marking;
                 _net = net;
+                _traces = traces;
             }
 
             EvaluationContext() {};
 
+            const MarkVal* marking(size_t trace) const {
+                if (!_marking) return nullptr;
+                const size_t place_offset = (_traces > 1 && _net) ? trace * _net->numberOfPlaces() : 0;
+                return _marking + place_offset;
+            }
+
             const MarkVal* marking() const {
-                return &_marking[_offset];
+                return marking(_offset);
+            }
+
+            MarkVal tokens(size_t place, size_t trace) const {
+                return marking(trace)[place];
+            }
+
+            MarkVal tokens(size_t place) const {
+                return marking(_offset)[place];
             }
 
             void setMarking(MarkVal* marking) {
@@ -138,14 +154,23 @@ namespace PetriEngine {
                 return _net;
             }
 
+            size_t offset() const {
+                return _offset;
+            }
+
             void set_offset(size_t i) {
                 _offset = i;
+            }
+
+            size_t traces() const {
+                return _traces;
             }
 
         private:
             const MarkVal* _marking = nullptr;
             const PetriNet* _net = nullptr;
             size_t _offset = 0;
+            size_t _traces = 1;
         };
 
         /** Context for distance computation */

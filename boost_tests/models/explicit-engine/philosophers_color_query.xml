@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<property-set xmlns="http://tapaal.net/">
+  <property>
+    <id>Can this state be reached?</id>
+    <description>Can this state be reached?</description>
+    <formula>
+      <exists-path>
+        <finally>
+          <conjunction>
+            <integer-eq><tokens-count><place>
+              Philosophers_dash_COL_dash_000005__catch2
+              <color-expression><color id="Id1"/></color-expression>
+            </place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+            <integer-eq><tokens-count><place>
+              Philosophers_dash_COL_dash_000005__catch2
+              <color-expression><color id="Id5"/></color-expression>
+            </place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+            <integer-eq><tokens-count><place>
+              Philosophers_dash_COL_dash_000005__think
+              <color-expression><color id="Id2"/></color-expression>
+            </place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+            <integer-eq><tokens-count><place>Philosophers_dash_COL_dash_000005__eat</place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+            <integer-eq><tokens-count><place>
+              Philosophers_dash_COL_dash_000005__catch1
+              <color-expression><color id="Id3"/></color-expression>
+            </place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+          </conjunction>
+        </finally>
+      </exists-path>
+    </formula>
+  </property>
+</property-set>

@@ -15,44 +15,35 @@ concurrency:
 jobs:
   build:
     if: github.event.pull_request.draft == false
-    runs-on: macos-13
+    runs-on: macos-15-intel
+
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v7.0.1
 
-      - name: Check architecture
-        shell: bash
-        run: |
-          echo "The runner is of type $(uname -m)."
-          if [ $(uname -m) != "x86_64" ] 
-          then 
-            echo "$(uname -m) detected. This test must be run on x86_64"
-            exit -1
-          fi
-          exit 0
+    - name: Check architecture
+      shell: bash
+      run: |
+        echo "The runner is of type $(uname -m)."
+        if [ $(uname -m) != "x86_64" ]
+        then
+          echo "$(uname -m) detected. This test must be run on x86_64"
+          exit -1
+        fi
+        exit 0
 
-      - name: Install Packages
-        run: |
-          brew install flex bison autoconf automake libtool m4
-          echo 'export PATH="/usr/local/opt/bison/bin:$PATH"' >> /Users/runner/.bash_profile
-          echo 'export PATH="/usr/local/opt/flex/bin:$PATH"' >> /Users/runner/.bash_profile
-      - name: Build 
-        uses: lukka/run-cmake@v2.5
-        with:
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeAppendedArgs: >-
-            -DVERIFYPN_Static=ON 
-            -DVERIFYPN_MC_Simplification=OFF 
-            -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison 
-            -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex
-          cmakeBuildType: Release
-          cmakeGenerator: UnixMakefiles
-          buildDirectory: '${{runner.workspace}}/build'
-        env:
-          CC: gcc-14
-          CXX: g++-14
-          
-      - name: Upload artifacts 
-        uses: actions/upload-artifact@v4
-        with:
-          name: verifypn-osx64
-          path: '${{runner.workspace}}/build/verifypn/bin/verifypn-osx64'
+    - name: Install dependencies
+      run: |
+        GCC_VERSION=$(sed -nE 's/^set\(DEFAULT_GCC_VERSION ([0-9]+)\)$/\1/p' CMakeLists.txt)
+        [[ $GCC_VERSION =~ ^[0-9]+$ ]]
+        brew install cmake flex bison ninja "gcc@${GCC_VERSION}"
+
+    - name: Build Release
+      run: |
+        export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+        cmake --workflow release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: verifypn-osx64
+        path: '${{github.workspace}}/build-release/verifypn/bin/verifypn-osx64'

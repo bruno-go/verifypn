@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<property-set xmlns="http://tapaal.net/">
+  <property>
+    <id>Tarjan trace reconstruction</id>
+    <description>Fill and empty the buffer</description>
+    <formula>
+      <exists-path>
+        <until>
+          <before>
+            <disjunction>
+              <integer-eq><tokens-count><place>P0</place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+              <integer-eq><tokens-count><place>P2</place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+            </disjunction>
+          </before>
+          <reach>
+            <conjunction>
+              <integer-eq><tokens-count><place>buffer</place></tokens-count><integer-constant>4</integer-constant></integer-eq>
+              <until>
+                <before>
+                  <disjunction>
+                    <integer-eq><tokens-count><place>P2</place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+                    <integer-eq><tokens-count><place>P0</place></tokens-count><integer-constant>1</integer-constant></integer-eq>
+                  </disjunction>
+                </before>
+                <reach>
+                  <integer-eq><tokens-count><place>buffer</place></tokens-count><integer-constant>0</integer-constant></integer-eq>
+                </reach>
+              </until>
+            </conjunction>
+          </reach>
+        </until>
+      </exists-path>
+    </formula>
+  </property>
+</property-set>

@@ -1,4 +1,5 @@
-name: Build Windows (Cross)
+name: Build Windows (Cross Compile)
+
 on:
   push:
     branches: [ main ]
@@ -8,37 +9,27 @@ on:
   workflow_dispatch:
 
 concurrency: 
-  group: build-Win-${{ github.head_ref }}
+  group: build-win-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
   build:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v7.0.1
 
-      - name: Install Packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install flex bison
-          sudo apt-get install mingw-w64-x86-64-dev mingw-w64-tools g++-mingw-w64-x86-64 wine wine-binfmt
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install flex bison mingw-w64 ninja-build
 
-      - name: Build 
-        uses: lukka/run-cmake@v2.5
-        with:
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeAppendedArgs: >-
-            -DCMAKE_TOOLCHAIN_FILE=${{runner.workspace}}/verifypn/toolchain-x86_64-w64-mingw32.cmake
-            -DVERIFYPN_Static=ON 
-            -DVERIFYPN_MC_Simplification=OFF
-          cmakeBuildType: Release
-          cmakeGenerator: UnixMakefiles
-          buildDirectory: '${{runner.workspace}}/build'     
-          buildWithCMake: true
-          buildWithCMakeArgs: -- -j$(nproc)
-      - name: Upload artifacts 
-        uses: actions/upload-artifact@v4
-        with:
-          name: verifypn-win64
-          path: '${{runner.workspace}}/build/verifypn/bin/verifypn-win64.exe'
+    - name: Build Release
+      run: cmake --workflow win64-release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: verifypn-win64
+        path: '${{github.workspace}}/build-win64-release/verifypn/bin/verifypn-win64.exe'

@@ -10,6 +10,7 @@ namespace PetriEngine::ExplicitColored {
         uint32_t endWaitingStates = 0;
         uint32_t peakWaitingStates = 0;
         uint32_t discoveredStates = 0;
+        uint64_t maxTokens = 0;
         size_t biggestEncoding = 0;
     };
 }

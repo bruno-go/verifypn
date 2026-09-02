@@ -143,6 +143,7 @@ namespace LTL {
             assert(sucinfo._successors != nullptr);
             if (sucinfo._successors.empty()) {
                 _last = std::numeric_limits<uint32_t>::max() - 1;
+                sucinfo._transition = _last;
                 return false;
             }
             _last = sucinfo._successors.front();

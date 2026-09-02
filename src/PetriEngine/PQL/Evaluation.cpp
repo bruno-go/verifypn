@@ -25,7 +25,7 @@ namespace PetriEngine { namespace PQL {
     template<typename V, typename C>
     bool compare(V* visitor, C* condition)
     {
-        ExprEvalVisitor eval(visitor->context());
+        ExprEvalVisitor eval(visitor->context(), visitor->offset());
         Visitor::visit(eval, (*condition)[0]);
 
         auto v1 = eval.value();
@@ -46,15 +46,27 @@ namespace PetriEngine { namespace PQL {
             return C::fail_hard_here;
     }
 
+    template<typename V>
+    Condition::Result eval_compare_conjunction(V* visitor, const CompareConjunction* element) {
+        bool res = true;
+        for (auto &c: element->constraints()) {
+            auto val = visitor->tokens(c._place);
+            res = res && val <= c._upper && val >= c._lower;
+            if (!res) break;
+        }
+        
+        return (element->isNegated() xor res) ? Condition::RTRUE : Condition::RFALSE;
+    }
+
     template<typename V, typename E>
     int64_t commutative(V* visitor, const E* element, const EvaluationContext& context) {
         int64_t r = element->constant();
         for(auto& i : element->places())
         {
             if constexpr (std::is_same<E, PlusExpr>::value)
-                r += context.marking()[i.first];
+                r += visitor->tokens(i.first);
             else if constexpr (std::is_same<E, MultiplyExpr>::value)
-                r *= context.marking()[i.first];
+                r *= visitor->tokens(i.first);
             else
                 E::fail_hard_here;
         }
@@ -101,7 +113,7 @@ namespace PetriEngine { namespace PQL {
 
     void ExprEvalVisitor::_accept(const UnfoldedIdentifierExpr *element) {
         assert(element->offset() != -1);
-        _value = (int64_t) _context.marking()[element->offset() + _offset*_context.net()->numberOfPlaces()];
+        _value = static_cast<int64_t>(tokens(element->offset()));
     }
 
     void ExprEvalVisitor::_accept(const IdentifierExpr *element) {
@@ -242,12 +254,7 @@ namespace PetriEngine { namespace PQL {
     }
 
     void EvaluateVisitor::_accept(CompareConjunction *element) {
-        bool res = true;
-        for (auto &c: element->constraints()) {
-            res = res && _context.marking()[c._place] <= c._upper && _context.marking()[c._place] >= c._lower;
-            if (!res) break;
-        }
-        _return_value = {(element->isNegated() xor res) ? Condition::RTRUE : Condition::RFALSE};
+        _return_value = {eval_compare_conjunction(this, element)};
     }
 
     void EvaluateVisitor::_accept(LessThanOrEqualCondition *element) {
@@ -284,14 +291,14 @@ namespace PetriEngine { namespace PQL {
     }
 
     void EvaluateVisitor::_accept(DeadlockCondition *element) {
-        if (!_context.net() || !_context.net()->deadlocked(_context.marking()))
+        if (!_context.net() || !_context.net()->deadlocked(marking()))
             _return_value = {Condition::RFALSE};
         else
             _return_value = {Condition::RTRUE};
     }
 
     void EvaluateVisitor::_accept(UnfoldedUpperBoundsCondition *element) {
-        element->setUpperBound(element->value(_context.marking()));
+        element->setUpperBound(element->value(marking()));
         _return_value = {element->getMax() <= element->getBound() ? Condition::RTRUE : Condition::RUNKNOWN};
     }
 
@@ -399,7 +406,7 @@ namespace PetriEngine { namespace PQL {
     }
 
     void EvaluateAndSetVisitor::_accept(CompareConjunction *element) {
-        auto res = evaluate(element, _context);
+        auto res = eval_compare_conjunction(this, element);
         element->setSatisfied(res);
         _return_value = {res};
     }
@@ -444,23 +451,25 @@ namespace PetriEngine { namespace PQL {
         if (!_context.net()) {
             _return_value = {Condition::RFALSE};
         } else {
-            element->setSatisfied(_context.net()->deadlocked(_context.marking()));
+            element->setSatisfied(_context.net()->deadlocked(marking()));
             _return_value = {element->isSatisfied() ? Condition::RTRUE : Condition::RFALSE};
         }
     }
 
     void EvaluateAndSetVisitor::_accept(UnfoldedUpperBoundsCondition *element) {
-        auto res = evaluate(element, _context);
+        element->setUpperBound(element->value(marking()));
+        auto res = element->getMax() <= element->getBound() ? Condition::RTRUE : Condition::RUNKNOWN;
         element->setSatisfied(res);
         _return_value = {res};
     }
 
     void EvaluateAndSetVisitor::_accept(ShallowCondition *element) {
         Visitor::visit(this, element->getCompiled());
+        element->setSatisfied(_return_value);
     }
 
     int64_t evaluate(Expr *element, const EvaluationContext &context) {
-        ExprEvalVisitor visitor(context);
+        ExprEvalVisitor visitor(context, context.offset());
         Visitor::visit(&visitor, element);
         return visitor.value();
     }

@@ -108,7 +108,6 @@ namespace PetriEngine::Colored {
 
         void inhibitorArcs();
 
-        void writeInhibitorExpressionToPnml(Colored::Arc inhibitor);
     };
 }
 

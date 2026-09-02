@@ -8,65 +8,60 @@ VerifyPN is available under the terms of the GNU GPL version 3 or
 If this license doesn't suit you're welcome to contact us, and purpose an
 alternative license.
 
-## Compilation
-Requirements for compilation
-```
-cmake >= 3.9
-flex >= 2.6.4
-bison >= 3.0.5
-gmp-static (required only for model checking competition)
+## Linux
 
+Install dependencies:
+
+```bash
 sudo apt update
-sudo apt install build-essential cmake flex bison git brz
-
+sudo apt install cmake ninja-build flex bison libboost-all-dev gcc-16 g++-16
 ```
 
-The four distributions of VerifyPN can be compiled as follows
-### Linux64 and OSX64
-```
-bzr branch lp:verifypn
-mkdir build && cd  build
-cmake .. -DVERIFYPN_Static=ON -DVERIFYPN_MC_Simplification=OFF 
+Build a release:
 
-#For mac, one need to enforce that we use the GCC compiler using:
-export CC=gcc-11
-export CXX=g++-11
-#and point to the correct version of flex and bison by adding
-#-DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex 
-#to cmake call, e.g. like
-cmake -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison -DFLEX_EXECUTABLE=/opt/homebrew/opt/flex/bin/flex   ..
-
+```bash
+cmake --workflow release
 ```
 
-### Windows 64 cross-compilation with minGW
-Install cross-compiler and libs
+## Mac OS
 
-```
-sudo apt install mingw-w64-x86-64-dev mingw-w64-tools g++-mingw-w64-x86-64
-sudo apt install wine wine-binfmt #Needed to run tests compile
-```
+Install Xcode through the App Store, then install dependencies:
 
-To build
-
-```
-mkdir build-win && cd  build-win
-cmake .. -DVERIFYPN_Static=ON -DVERIFYPN_MC_Simplification=OFF -DCMAKE_TOOLCHAIN_FILE=../toolchain-x86_64-w64-mingw32.cmake
-make
+```bash
+brew install cmake ninja flex bison gcc@16
 ```
 
-### Linux64 - Model Checking Competition
-```
-mkdir build
-cd  build
-cmake .. -DVERIFYPN_Static=OFF -DVERIFYPN_MC_Simplification=ON 
-make
+Build a release:
+
+```bash
+cmake --workflow release
 ```
 
-### Mac 64 compilation
-```
-mkdir build
-cd build
-cmake -DVERIFYPN_MC_Simplification=OFF  -DBISON_EXECUTABLE=/usr/local/opt/bison/bin/bison -DFLEX_EXECUTABLE=/usr/local/opt/flex/bin/flex -DCMAKE_C_COMPILER=/usr/local/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/local/bin/g++-9 ..
-make
+## Windows (Cross Compile)
+
+Install dependencies on Linux:
+
+```bash
+sudo apt update
+sudo apt install cmake ninja-build flex bison mingw-w64
 ```
 
+Build a Windows release:
+
+```bash
+cmake --workflow win64-release
+```
+
+## CMake Workflows
+
+| Workflow | Purpose | Build directory |
+| --- | --- | --- |
+| `release` | Release build | `build-release` |
+| `debug` | Debug build | `build-debug` |
+| `test` | Release build and tests | `build-test` |
+| `win64-release` | Windows cross-compiled release | `build-win64-release` |
+
+The default GCC version can be overridden by setting the `GCC_VERSION` environment variable:
+```bash
+GCC_VERSION=12 cmake --workflow release
+```

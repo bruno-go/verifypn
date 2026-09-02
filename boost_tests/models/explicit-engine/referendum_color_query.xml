@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<property-set xmlns="http://tapaal.net/">
+  <property>
+    <id>Selected voter reaches voting</id>
+    <description>Selected voter reaches voting</description>
+    <formula>
+      <exists-path>
+        <finally>
+          <integer-eq>
+            <tokens-count>
+              <place>Referendum_colored_voting<color-expression><color id="Voters1"/></color-expression></place>
+            </tokens-count>
+            <integer-constant>1</integer-constant>
+          </integer-eq>
+        </finally>
+      </exists-path>
+    </formula>
+  </property>
+</property-set>

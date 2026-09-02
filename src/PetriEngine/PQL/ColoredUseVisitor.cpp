@@ -85,12 +85,41 @@ namespace PetriEngine { namespace PQL {
         _placeInUse[it->second] = true;
     }
 
+    void ColoredUseVisitor::_accept(const UnfoldedIdentifierExpr *element) {
+        const auto& name = *element->name();
+        const auto separator = name.rfind('_');
+        if (separator == std::string::npos)
+            throw base_error("Unable to resolve colored identifier \"", name, "\"");
+
+        const auto placeName = std::make_shared<const_string>(name.substr(0, separator));
+        const auto it = _placeNameToIndexMap.find(placeName);
+        const auto suffix = name.substr(separator + 1);
+
+        const bool isNumber = !suffix.empty() && suffix.find_first_not_of("0123456789") == std::string::npos;
+        const bool placeExists = (it != _placeNameToIndexMap.end());
+
+        if (!placeExists || !isNumber) {
+            throw base_error("Unable to resolve colored identifier \"", name, "\"");
+        }
+
+        _placeInUse[it->second] = true;
+    }
+
     void ColoredUseVisitor::_accept(const LiteralExpr *element) {
         // no-op
     }
 
     void ColoredUseVisitor::_accept(const MinusExpr *element) {
         Visitor::visit(this, (*element)[0]);
+    }
+
+    void ColoredUseVisitor::_accept(const CommutativeExpr *element) {
+        for (const auto& [_, name] : element->places()) {
+            UnfoldedIdentifierExpr identifier{name};
+            _accept(&identifier);
+        }
+
+        _accept(static_cast<const NaryExpr*>(element));
     }
 
     void ColoredUseVisitor::_accept(const NaryExpr *element) {

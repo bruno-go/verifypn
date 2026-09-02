@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<property-set xmlns="http://mcc.lip6.fr/">
+  <property>
+    <id>Sudoku-PT-AN10-LTLFireability-01-minimized</id>
+    <description>Regression for AG fireability with stubborn sets</description>
+    <formula>
+      <all-paths>
+        <globally>
+          <is-fireable>
+            <transition>select_1</transition>
+            <transition>select_2</transition>
+          </is-fireable>
+        </globally>
+      </all-paths>
+    </formula>
+  </property>
+</property-set>

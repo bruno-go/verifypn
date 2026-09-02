@@ -146,8 +146,8 @@ namespace LTL {
         template<typename S, typename T, typename D, typename SuccGen>
         void pop(S& seen, light_deque<T>& cstack, light_deque<D>& dstack, SuccGen& successorGenerator);
 
-        template<typename T, typename D, typename SuccGen>
-        void update(light_deque<T>& cstack, light_deque<D>& d, SuccGen& successorGenerator, idx_t to);
+        template<typename T, typename D>
+        void update(light_deque<T>& cstack, light_deque<D>& d, idx_t to);
 
         template<typename S, typename T, typename SuccGen, typename D>
         bool next_trans(S& seen, light_deque<T>& cstack, SuccGen& successorGenerator, State &state, State &parent, D &delem);

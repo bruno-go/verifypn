@@ -9,39 +9,29 @@ on:
   workflow_dispatch:
 
 concurrency: 
-  group: build-MacOS-ARM${{ github.head_ref }}
+  group: build-MacOS-ARM-${{ github.head_ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    if: github.event.pull_request.draft == false
     runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v2
 
-      - name: Install Packages
-        run: |
-          brew install flex bison autoconf automake libtool
-          echo 'export PATH="/opt/homebrew/opt/bison/bin:$PATH"' >> /Users/runner/.bash_profile
-          echo 'export PATH="/opt/homebrew/opt/flex/bin:$PATH"' >> /Users/runner/.bash_profile
-      - name: Build 
-        uses: lukka/run-cmake@v2.5
-        with:
-          cmakeListsOrSettingsJson: CMakeListsTxtAdvanced
-          cmakeAppendedArgs: >-
-            -DVERIFYPN_Static=ON 
-            -DVERIFYPN_MC_Simplification=OFF 
-            -DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison
-            -DFLEX_EXECUTABLE=/opt/homebrew/opt/flex/bin/flex
-          cmakeBuildType: Release
-          cmakeGenerator: UnixMakefiles
-          buildDirectory: '${{runner.workspace}}/build'
-        env:
-          CC: gcc-14
-          CXX: g++-14
-          
-      - name: Upload artifacts 
-        uses: actions/upload-artifact@v4
-        with:
-          name: verifypn-arm64
-          path: '${{runner.workspace}}/build/verifypn/bin/verifypn-osx64'
+    steps:
+    - uses: actions/checkout@v7.0.1
+
+    - name: Install dependencies
+      run: |
+        GCC_VERSION=$(sed -nE 's/^set\(DEFAULT_GCC_VERSION ([0-9]+)\)$/\1/p' CMakeLists.txt)
+        [[ $GCC_VERSION =~ ^[0-9]+$ ]]
+        brew install cmake flex bison ninja "gcc@${GCC_VERSION}"
+
+    - name: Build Release
+      run: |
+        export PATH="$(brew --prefix bison)/bin:$(brew --prefix flex)/bin:$PATH"
+        cmake --workflow release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        name: verifypn-arm64
+        path: '${{github.workspace}}/build-release/verifypn/bin/verifypn-osx64'

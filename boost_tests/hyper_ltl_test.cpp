@@ -33,6 +33,46 @@ BOOST_AUTO_TEST_CASE(DirectoryTest) {
     BOOST_REQUIRE(getenv("TEST_FILES"));
 }
 
+BOOST_AUTO_TEST_CASE(PathScopedTokenSumUsesSelectedTrace) {
+    auto [pn, conditions, qstrings] = load_pn(
+        "/models/hyper1.pnml", "/models/hyper1.xml", {0});
+    std::vector<PQL::Expr_ptr> places{
+        std::make_shared<PQL::UnfoldedIdentifierExpr>(pn->placeNames()[0], 0),
+        std::make_shared<PQL::UnfoldedIdentifierExpr>(pn->placeNames()[1], 1)
+    };
+    auto expression = std::make_shared<PQL::PathSelectExpr>(
+        "T2", std::make_shared<PQL::PlusExpr>(std::move(places)), 1);
+    const MarkVal marking[]{1, 2, 0, 0, 4, 5, 0, 0};
+
+    BOOST_REQUIRE_EQUAL(PQL::evaluate(expression.get(), PQL::EvaluationContext(marking, pn.get(), 2)), 9);
+}
+
+BOOST_AUTO_TEST_CASE(PathScopedFireabilityUsesSelectedTrace) {
+    auto [pn, conditions, qstrings] = load_pn(
+        "/models/hyper1.pnml", "/models/hyper1.xml", {0});
+
+    // Place 2 has 1 token in Trace 1, but 0 in Trace 0
+    std::vector<PQL::CompareConjunction::cons_t> cons;
+    PQL::CompareConjunction::cons_t c;
+    c._place = 2;
+    c._lower = 1;
+    c._upper = std::numeric_limits<uint32_t>::max();
+    cons.push_back(c);
+
+    auto fireable = std::make_shared<PQL::CompareConjunction>(std::move(cons), false);
+    auto condition = std::make_shared<PQL::PathSelectCondition>("T2", fireable, 1);
+
+    const MarkVal marking[]{
+        0, 1, 0, 0,  // Trace 0
+        0, 0, 1, 0   // Trace 1
+    };
+
+    BOOST_REQUIRE_EQUAL(
+        PQL::evaluate(condition.get(), PQL::EvaluationContext(marking, pn.get(), 2)),
+        PQL::Condition::RTRUE
+    );
+}
+
 BOOST_AUTO_TEST_CASE(SimpleHyperTest, * utf::timeout(300)) {
     std::set<size_t> qnums{0, 1};
     std::vector<Reachability::ResultPrinter::Result> expected{

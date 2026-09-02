@@ -1,0 +1,38 @@
+<pnml>
+<net id="ComposedModel" type="P/T net">
+<place id="TAPN1__P0" name="TAPN1__P0" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="330" y="330" /></graphics></place>
+<place id="TAPN1__P1" name="TAPN1__P1" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="510" y="330" /></graphics></place>
+<place id="TAPN1__P2" name="TAPN1__P2" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="750" y="330" /></graphics></place>
+<place id="TAPN1__P3" name="TAPN1__P3" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="930" y="330" /></graphics></place>
+<place id="TAPN1__buffer" name="TAPN1__buffer" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="630" y="240" /></graphics></place>
+<place id="TAPN1__P5" name="TAPN1__P5" invariant="&lt; inf" initialMarking="4" >
+<graphics><position x="630" y="60" /></graphics></place>
+<transition player="0" id="TAPN1__T0" name="TAPN1__T0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="420" y="240" /></graphics></transition>
+<transition player="0" id="TAPN1__T1" name="TAPN1__T1" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="420" y="420" /></graphics></transition>
+<transition player="0" id="TAPN1__T2" name="TAPN1__T2" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="810" y="240" /></graphics></transition>
+<transition player="0" id="TAPN1__T3" name="TAPN1__T3" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="840" y="450" /></graphics></transition>
+<inputArc source="TAPN1__P0" target="TAPN1__T0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__P1" target="TAPN1__T1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__P2" target="TAPN1__T2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__P3" target="TAPN1__T3"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__buffer" target="TAPN1__T2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__P5" target="TAPN1__T0"><inscription><value>1</value></inscription></inputArc>
+<outputArc source="TAPN1__T0" target="TAPN1__P1"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__T1" target="TAPN1__P0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__T2" target="TAPN1__P3"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__T3" target="TAPN1__P2"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__T0" target="TAPN1__buffer"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__T2" target="TAPN1__P5"><inscription><value>1</value></inscription></outputArc>
+</net>
+</pnml>
+
+

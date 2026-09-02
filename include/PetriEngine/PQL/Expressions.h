@@ -500,6 +500,7 @@ namespace PetriEngine {
             Path getPath() const override { return pError; }
             CTLType getQueryType() const override { return TYPE_ERROR; }
             uint32_t distance(DistanceContext& context) const override {
+                auto old = context.offset();
                 context.set_offset(_offset);
                 auto fn = [this](auto& context) -> uint32_t {
                 if(_child)
@@ -508,7 +509,7 @@ namespace PetriEngine {
                     return 0;
                 };
                 auto r = fn(context);
-                context.set_offset(0);
+                context.set_offset(old);
                 return r;
             }
             virtual type_id_t type() const { return PQL::type_id<decltype(this)>(); };

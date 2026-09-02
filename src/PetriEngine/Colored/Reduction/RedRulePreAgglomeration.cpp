@@ -487,7 +487,7 @@ namespace PetriEngine::Colored::Reduction {
 
                             for (const auto& arc : red.inhibitorArcs()){
                                 if (arc.transition == originalConsumers[n]){
-                                    ArcExpression_ptr expr = nullptr;
+                                    ArcExpression_ptr expr = arc.expr == nullptr ? nullptr : varReplacevis.makeReplacementArcExpr(arc.expr);
                                     red.addInputArc(arc.place, tid, expr, arc.inhib_weight);
                                 }
                             }
@@ -570,4 +570,3 @@ namespace PetriEngine::Colored::Reduction {
         return std::pair{(hangingGuardVar_risk && hangingArcVar), hangingArcVar};
     }
 }
-

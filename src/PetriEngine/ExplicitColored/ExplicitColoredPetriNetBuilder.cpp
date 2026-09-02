@@ -60,7 +60,11 @@ namespace PetriEngine::ExplicitColored {
         auto from = _placeIndices.find(place)->second;
         auto to = _transitionIndices.find(transition)->second;
         if (inhib_weight != 0) {
-            _currentNet._inhibitorArcs.emplace_back(from, to, inhib_weight);
+            if (expr == nullptr) {
+                _currentNet._inhibitorArcs.emplace_back(from, to, inhib_weight);
+            } else {
+                _inhibitorArcsToCompile.emplace_back(from, to, expr, inhib_weight);
+            }
         } else {
             _inputArcsToCompile.emplace_back(from, to, expr);
         }
@@ -248,7 +252,7 @@ namespace PetriEngine::ExplicitColored {
         auto inhibIndices = std::vector<uint32_t>(transitions + 1, _currentNet._inhibitorArcs.size());
 
         std::sort(_currentNet._inhibitorArcs.begin(), _currentNet._inhibitorArcs.end(),
-                  [](const ColoredPetriNetInhibitor a, const ColoredPetriNetInhibitor b){
+                  [](const ColoredPetriNetInhibitor& a, const ColoredPetriNetInhibitor& b){
             return a.to < b.to;
         });
         auto arcIndex = 0;
@@ -290,6 +294,7 @@ namespace PetriEngine::ExplicitColored {
             std::set<Variable_t> relevantVariables;
             _currentNet.extractGuardVariables(tid, relevantVariables);
             _currentNet.extractInputVariables(tid, relevantVariables);
+            _currentNet.extractInhibitorVariables(tid, relevantVariables);
             _currentNet.extractOutputVariables(tid, relevantVariables);
 
             Binding_t totalBindings = 0;
@@ -331,6 +336,12 @@ namespace PetriEngine::ExplicitColored {
 
     void ExplicitColoredPetriNetBuilder::_compileUncompiledArcs() {
         const ArcCompiler arcCompiler(*_variableMap, *_colors);
+
+        for (auto& [from, to, expr, weight] : _inhibitorArcsToCompile) {
+            _currentNet._inhibitorArcs.emplace_back(from, to, weight, arcCompiler.compile(expr));
+        }
+        
+        _inhibitorArcsToCompile.clear();
 
         auto inputIterator = _inputArcs.cbegin();
         Place_t inputPlaceId = 0;

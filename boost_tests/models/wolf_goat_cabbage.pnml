@@ -1,0 +1,108 @@
+<pnml>
+<net id="ComposedModel" type="P/T net">
+<place id="TAPN1__TAPN1__man_L_0" name="TAPN1__TAPN1__man_L_0" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="210" y="360" /></graphics></place>
+<place id="TAPN1__TAPN1__man_LSum" name="TAPN1__TAPN1__man_LSum" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="240" y="330" /></graphics></place>
+<place id="TAPN1__TAPN1__items_L_0" name="TAPN1__TAPN1__items_L_0" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="210" y="600" /></graphics></place>
+<place id="TAPN1__TAPN1__man_R_0" name="TAPN1__TAPN1__man_R_0" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="750" y="360" /></graphics></place>
+<place id="TAPN1__TAPN1__man_RSum" name="TAPN1__TAPN1__man_RSum" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="780" y="330" /></graphics></place>
+<place id="TAPN1__TAPN1__items_R_0" name="TAPN1__TAPN1__items_R_0" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="750" y="600" /></graphics></place>
+<place id="TAPN1__TAPN1__items_L_1" name="TAPN1__TAPN1__items_L_1" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="210" y="600" /></graphics></place>
+<place id="TAPN1__TAPN1__items_R_1" name="TAPN1__TAPN1__items_R_1" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="750" y="600" /></graphics></place>
+<place id="TAPN1__TAPN1__items_L_2" name="TAPN1__TAPN1__items_L_2" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="210" y="630" /></graphics></place>
+<place id="TAPN1__TAPN1__items_R_2" name="TAPN1__TAPN1__items_R_2" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="750" y="630" /></graphics></place>
+<transition player="0" id="TAPN1__TAPN1__man_LR_0" name="TAPN1__TAPN1__man_LR_0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="270" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_LR_1" name="TAPN1__TAPN1__man_LR_1" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="300" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_LR_2" name="TAPN1__TAPN1__man_LR_2" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="300" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_LR_alone_0" name="TAPN1__TAPN1__man_LR_alone_0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="120" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__eat_something_L_0" name="TAPN1__TAPN1__eat_something_L_0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="210" y="720" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_RL_0" name="TAPN1__TAPN1__man_RL_0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="420" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_RL_1" name="TAPN1__TAPN1__man_RL_1" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="420" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_RL_2" name="TAPN1__TAPN1__man_RL_2" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="450" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__man_RL_alone_0" name="TAPN1__TAPN1__man_RL_alone_0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="480" y="30" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__eat_something_R_0" name="TAPN1__TAPN1__eat_something_R_0" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="750" y="720" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__eat_something_L_1" name="TAPN1__TAPN1__eat_something_L_1" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="210" y="720" /></graphics></transition>
+<transition player="0" id="TAPN1__TAPN1__eat_something_R_1" name="TAPN1__TAPN1__eat_something_R_1" weight="1.0" firingMode="Random" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="750" y="750" /></graphics></transition>
+<inputArc source="TAPN1__TAPN1__man_L_0" target="TAPN1__TAPN1__man_LR_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_LSum" target="TAPN1__TAPN1__man_LR_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_0" target="TAPN1__TAPN1__man_LR_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_L_0" target="TAPN1__TAPN1__man_LR_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_LSum" target="TAPN1__TAPN1__man_LR_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_1" target="TAPN1__TAPN1__man_LR_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_L_0" target="TAPN1__TAPN1__man_LR_2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_LSum" target="TAPN1__TAPN1__man_LR_2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_2" target="TAPN1__TAPN1__man_LR_2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_L_0" target="TAPN1__TAPN1__man_LR_alone_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_LSum" target="TAPN1__TAPN1__man_LR_alone_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_0" target="TAPN1__TAPN1__eat_something_L_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_1" target="TAPN1__TAPN1__eat_something_L_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_R_0" target="TAPN1__TAPN1__man_RL_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_RSum" target="TAPN1__TAPN1__man_RL_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_0" target="TAPN1__TAPN1__man_RL_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_R_0" target="TAPN1__TAPN1__man_RL_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_RSum" target="TAPN1__TAPN1__man_RL_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_1" target="TAPN1__TAPN1__man_RL_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_R_0" target="TAPN1__TAPN1__man_RL_2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_RSum" target="TAPN1__TAPN1__man_RL_2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_2" target="TAPN1__TAPN1__man_RL_2"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_R_0" target="TAPN1__TAPN1__man_RL_alone_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__man_RSum" target="TAPN1__TAPN1__man_RL_alone_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_0" target="TAPN1__TAPN1__eat_something_R_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_1" target="TAPN1__TAPN1__eat_something_R_0"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_1" target="TAPN1__TAPN1__eat_something_L_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_L_2" target="TAPN1__TAPN1__eat_something_L_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_1" target="TAPN1__TAPN1__eat_something_R_1"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="TAPN1__TAPN1__items_R_2" target="TAPN1__TAPN1__eat_something_R_1"><inscription><value>1</value></inscription></inputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_0" target="TAPN1__TAPN1__man_R_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_0" target="TAPN1__TAPN1__man_RSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_0" target="TAPN1__TAPN1__items_R_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_1" target="TAPN1__TAPN1__man_R_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_1" target="TAPN1__TAPN1__man_RSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_1" target="TAPN1__TAPN1__items_R_1"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_2" target="TAPN1__TAPN1__man_R_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_2" target="TAPN1__TAPN1__man_RSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_2" target="TAPN1__TAPN1__items_R_2"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_alone_0" target="TAPN1__TAPN1__man_R_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_LR_alone_0" target="TAPN1__TAPN1__man_RSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__eat_something_L_0" target="TAPN1__TAPN1__items_L_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_0" target="TAPN1__TAPN1__man_L_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_0" target="TAPN1__TAPN1__man_LSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_0" target="TAPN1__TAPN1__items_L_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_1" target="TAPN1__TAPN1__man_L_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_1" target="TAPN1__TAPN1__man_LSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_1" target="TAPN1__TAPN1__items_L_1"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_2" target="TAPN1__TAPN1__man_L_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_2" target="TAPN1__TAPN1__man_LSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_2" target="TAPN1__TAPN1__items_L_2"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_alone_0" target="TAPN1__TAPN1__man_L_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__man_RL_alone_0" target="TAPN1__TAPN1__man_LSum"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__eat_something_R_0" target="TAPN1__TAPN1__items_R_0"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__eat_something_L_1" target="TAPN1__TAPN1__items_L_1"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="TAPN1__TAPN1__eat_something_R_1" target="TAPN1__TAPN1__items_R_1"><inscription><value>1</value></inscription></outputArc>
+<inhibitorArc source="TAPN1__TAPN1__man_LSum" target="TAPN1__TAPN1__eat_something_L_0"><inscription><value>1</value></inscription></inhibitorArc>
+<inhibitorArc source="TAPN1__TAPN1__man_RSum" target="TAPN1__TAPN1__eat_something_R_0"><inscription><value>1</value></inscription></inhibitorArc>
+<inhibitorArc source="TAPN1__TAPN1__man_LSum" target="TAPN1__TAPN1__eat_something_L_1"><inscription><value>1</value></inscription></inhibitorArc>
+<inhibitorArc source="TAPN1__TAPN1__man_RSum" target="TAPN1__TAPN1__eat_something_R_1"><inscription><value>1</value></inscription></inhibitorArc>
+</net>
+</pnml>

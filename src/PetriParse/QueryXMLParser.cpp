@@ -17,6 +17,7 @@
  */
 
 #include "PetriParse/QueryXMLParser.h"
+#include "PetriEngine/Colored/ColoredPetriNetBuilder.h"
 #include "PetriEngine/PQL/Expressions.h"
 #include "PetriEngine/PQL/QueryPrinter.h"
 
@@ -34,8 +35,8 @@ int getChildCount(rapidxml::xml_node<> *n) {
     return c;
 }
 
-QueryXMLParser::QueryXMLParser(shared_string_set& string_set)
-: _string_set(string_set) { }
+QueryXMLParser::QueryXMLParser(shared_string_set& string_set, const PetriEngine::ColoredPetriNetBuilder* coloredNet)
+: _string_set(string_set), _coloredNet(coloredNet) { }
 
 QueryXMLParser::~QueryXMLParser() = default;
 
@@ -476,26 +477,49 @@ Expr_ptr QueryXMLParser::parseIntegerExpression(rapidxml::xml_node<>*  element) 
         auto children = element->first_node();
         std::vector<Expr_ptr> ids;
         for (auto it = children; it; it = it->next_sibling()) {
-            if (strcmp(it->name(), "place") != 0)
-            {
+            if (strcmp(it->name(), "place") != 0) {
                 assert(false);
                 return nullptr;
             }
+
             auto placeName = parsePlace(it);
-            if (placeName->empty())
-            {
+            if (placeName->empty()) {
                 assert(false);
                 return nullptr; // invalid place name
             }
-            auto id = std::make_shared<IdentifierExpr>(*_string_set.insert(placeName).first);
+
+            auto colorExpr = it->first_node("color-expression");
+            Expr_ptr id;
+            if (colorExpr) {
+                if (!_coloredNet) {
+                    throw base_error("Colored query requires a parsed colored model");
+                }
+
+                const auto place = _coloredNet->colored_placenames().find(placeName);
+                if (place == _coloredNet->colored_placenames().end()) {
+                    throw base_error("Unable to resolve colored place ", *placeName);
+                }
+
+                const auto* placeColorType = _coloredNet->places()[place->second].type;
+                const auto* color = parseColorExpression(colorExpr, placeColorType);
+                if (!color) {
+                    throw base_error("Unable to resolve color for place ", *placeName);
+                }
+
+                auto combinedName = std::make_shared<const_string>(*placeName + "_" + std::to_string(color->getId()));
+                id = std::make_shared<UnfoldedIdentifierExpr>(*_string_set.insert(combinedName).first);
+            } else {
+                id = std::make_shared<IdentifierExpr>(*_string_set.insert(placeName).first);
+            }
+
             ids.emplace_back(id);
         }
 
-        if (ids.empty())
-        {
+        if (ids.empty()) {
             assert(false);
             return nullptr;
         }
+
         if (ids.size() == 1) return ids[0];
 
         return std::make_shared<PlusExpr>(std::move(ids));
@@ -553,16 +577,81 @@ Expr_ptr QueryXMLParser::parseIntegerExpression(rapidxml::xml_node<>*  element) 
         if(expr != nullptr)
             return std::make_shared<PathSelectExpr>(name->value(), expr);
     }
-    assert(false);
+    fatal_error(elementName);
     return nullptr;
 }
 
-shared_const_string QueryXMLParser::parsePlace(rapidxml::xml_node<>*  element) {
+shared_const_string QueryXMLParser::parsePlace(rapidxml::xml_node<>* element) {
     if (strcmp(element->name(), "place") != 0)
         return std::make_shared<const_string>(""); // missing place tag
     std::string tmp{element->value()};
     tmp.erase(std::remove_if(tmp.begin(), tmp.end(), ::isspace), tmp.end());
     return std::make_shared<const_string>(std::move(tmp));
+}
+
+const PetriEngine::Colored::Color* QueryXMLParser::parseColorExpression(rapidxml::xml_node<>* element, const PetriEngine::Colored::ColorType* type) {
+    if (!element) {
+        throw base_error("Missing color_expression element");
+    }
+
+    if (strcmp(element->name(), "color-expression") == 0) {
+        auto child = element->first_node();
+        if (!child) {
+            throw base_error("Empty color_expression");
+        }
+        
+        return parseColorExpression(child, type);
+    }
+
+    if (strcmp(element->name(), "color") == 0) {
+        auto* id = element->first_attribute("id");
+        if (!id || !*id->value()) {
+            throw base_error("Expected non-empty color id in color_expression");
+        }
+
+        if (!type) {
+            throw base_error("Cannot resolve color without color type");
+        }
+
+        const auto* color = (*type)[id->value()];
+        if (!color) {
+            throw base_error("Unable to resolve color '", id->value(), "' for color type '", type->getName(), "'");
+        }
+
+        return color;
+    }
+
+    if (strcmp(element->name(), "tuple") == 0) {
+        if (!type || !type->isProduct()) {
+            throw base_error("Tuple color expression used for non-product color type '", type ? type->getName() : "null", "'");
+        }
+
+        const auto* productType = dynamic_cast<const PetriEngine::Colored::ProductType*>(type);
+        std::vector<const PetriEngine::Colored::Color*> tupleColors;
+        size_t idx = 0;
+        for (auto child = element->first_node(); child; child = child->next_sibling()) {
+            if (idx >= productType->getConstituentsSizes().size()) {
+                throw base_error("Too many components in tuple for product type '", productType->getName(), "'");
+            }
+
+            const auto* nestedType = productType->getNestedColorType(idx);
+            tupleColors.push_back(parseColorExpression(child, nestedType));
+            ++idx;
+        }
+
+        if (tupleColors.size() != productType->getConstituentsSizes().size()) {
+            throw base_error("Too few components in tuple for product type '", productType->getName(), "'");
+        }
+
+        const auto* color = productType->getColor(tupleColors);
+        if (!color) {
+            throw base_error("Unable to resolve tuple color in product type '", productType->getName(), "'");
+        }
+
+        return color;
+    }
+
+    throw base_error("Expected color or tuple in color_expression, found '", element->name(), "'");
 }
 
 void QueryXMLParser::printQueries(size_t i) {

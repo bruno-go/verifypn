@@ -254,7 +254,6 @@ namespace PetriEngine::Colored::Reduction {
 
         for (const Arc &arc : _builder._inhibitorArcs) {
             assert(arc.inhib_weight > 0);
-            assert(arc.expr == nullptr);
             assert(_builder._places[arc.place].inhibitor);
             assert(_builder._transitions[arc.transition].inhibited);
         }

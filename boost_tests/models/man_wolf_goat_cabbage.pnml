@@ -1,0 +1,88 @@
+<pnml>
+<net id="ComposedModel" type="P/T net">
+<place id="Shared__Man_L" name="Shared__Man_L" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="420" y="600" /></graphics></place>
+<place id="Shared__Wolf_L" name="Shared__Wolf_L" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="180" y="300" /></graphics></place>
+<place id="Shared__Goat_L" name="Shared__Goat_L" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="150" y="240" /></graphics></place>
+<place id="Shared__Cabbage_L" name="Shared__Cabbage_L" invariant="&lt; inf" initialMarking="1" >
+<graphics><position x="180" y="420" /></graphics></place>
+<place id="Shared__Man_R" name="Shared__Man_R" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="420" y="330" /></graphics></place>
+<place id="Shared__Wolf_R" name="Shared__Wolf_R" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="660" y="300" /></graphics></place>
+<place id="Shared__Goat_R" name="Shared__Goat_R" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="150" y="510" /></graphics></place>
+<place id="Shared__Cabbage_R" name="Shared__Cabbage_R" invariant="&lt; inf" initialMarking="0" >
+<graphics><position x="180" y="660" /></graphics></place>
+<transition player="0" id="LTR__MW_T" name="LTR__MW_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="450" y="270" /></graphics></transition>
+<transition player="0" id="LTR__MG_T" name="LTR__MG_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="450" y="420" /></graphics></transition>
+<transition player="0" id="LTR__MC_T" name="LTR__MC_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="450" y="570" /></graphics></transition>
+<transition player="0" id="RTL__M_T" name="RTL__M_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="1110" y="240" /></graphics></transition>
+<transition player="0" id="RTL__MW_T" name="RTL__MW_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="1110" y="300" /></graphics></transition>
+<transition player="0" id="RTL__MG_T" name="RTL__MG_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="1110" y="390" /></graphics></transition>
+<transition player="0" id="RTL__MC_T" name="RTL__MC_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="1110" y="450" /></graphics></transition>
+<transition player="0" id="Eat_Wolf__WG_EAT_R_T" name="Eat_Wolf__WG_EAT_R_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="270" y="1230" /></graphics></transition>
+<transition player="0" id="Eat_Wolf__WG_EAT_L_T" name="Eat_Wolf__WG_EAT_L_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="240" y="960" /></graphics></transition>
+<transition player="0" id="Eat_Goat__GC_EAT_R_T" name="Eat_Goat__GC_EAT_R_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="960" y="1260" /></graphics></transition>
+<transition player="0" id="Eat_Goat__GC_EAT_L_T" name="Eat_Goat__GC_EAT_L_T" weight="1.0" firingMode="Oldest" distribution="constant" value="1.0" urgent="false">
+<graphics><position x="960" y="990" /></graphics></transition>
+<inputArc source="Shared__Wolf_L" target="LTR__MW_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Goat_L" target="LTR__MG_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Cabbage_L" target="LTR__MC_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_L" target="LTR__MW_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_L" target="LTR__MG_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_L" target="LTR__MC_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_R" target="RTL__M_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_R" target="RTL__MW_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_R" target="RTL__MG_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_R" target="RTL__MC_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Wolf_R" target="RTL__MW_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Goat_R" target="RTL__MG_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Cabbage_R" target="RTL__MC_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Goat_R" target="Eat_Wolf__WG_EAT_R_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_L" target="Eat_Wolf__WG_EAT_R_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Wolf_R" target="Eat_Wolf__WG_EAT_R_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Wolf_L" target="Eat_Wolf__WG_EAT_L_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_R" target="Eat_Wolf__WG_EAT_L_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Goat_L" target="Eat_Wolf__WG_EAT_L_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Goat_R" target="Eat_Goat__GC_EAT_R_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_L" target="Eat_Goat__GC_EAT_R_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Cabbage_R" target="Eat_Goat__GC_EAT_R_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Goat_L" target="Eat_Goat__GC_EAT_L_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Man_R" target="Eat_Goat__GC_EAT_L_T"><inscription><value>1</value></inscription></inputArc>
+<inputArc source="Shared__Cabbage_L" target="Eat_Goat__GC_EAT_L_T"><inscription><value>1</value></inscription></inputArc>
+<outputArc source="LTR__MW_T" target="Shared__Wolf_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="LTR__MG_T" target="Shared__Goat_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="LTR__MC_T" target="Shared__Cabbage_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="LTR__MW_T" target="Shared__Man_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="LTR__MG_T" target="Shared__Man_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="LTR__MC_T" target="Shared__Man_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__M_T" target="Shared__Man_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__MW_T" target="Shared__Man_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__MG_T" target="Shared__Man_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__MC_T" target="Shared__Man_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__MW_T" target="Shared__Wolf_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__MG_T" target="Shared__Goat_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="RTL__MC_T" target="Shared__Cabbage_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Wolf__WG_EAT_R_T" target="Shared__Man_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Wolf__WG_EAT_R_T" target="Shared__Wolf_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Wolf__WG_EAT_L_T" target="Shared__Wolf_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Wolf__WG_EAT_L_T" target="Shared__Man_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Goat__GC_EAT_R_T" target="Shared__Goat_R"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Goat__GC_EAT_R_T" target="Shared__Man_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Goat__GC_EAT_L_T" target="Shared__Goat_L"><inscription><value>1</value></inscription></outputArc>
+<outputArc source="Eat_Goat__GC_EAT_L_T" target="Shared__Man_R"><inscription><value>1</value></inscription></outputArc>
+</net>
+</pnml>
