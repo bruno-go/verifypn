@@ -158,7 +158,7 @@ namespace PetriEngine {
                 const int variable_offset = path * ( _net->numberOfTransitions() + _net->numberOfPlaces() );
                 const int constraint_offset = path * _net->numberOfPlaces();
                 for (size_t p = 0; p < _net->numberOfPlaces(); p++) {
-                    const int colno = 1 + p + _net->numberOfTransitions() + variable_offset;
+                    const int colno = 1 + p +  _net->numberOfTransitions() + variable_offset;
                     ind[1] = p+1 + constraint_offset;
                     glp_set_mat_col(lp, colno, 1, ind.data(), one.data());
                     glp_set_row_bnds(lp, rowno, GLP_LO, 0, infty);
@@ -176,13 +176,6 @@ namespace PetriEngine {
                 }
             }
         
-            /*for(size_t p = 0; p < _net->numberOfPlaces(); p++){
-                const int colno = 1 + p + _net->numberOfTransitions();
-                glp_set_col_bnds(lp, colno, GLP_FX, (double) _marking[p], 0);
-                glp_set_obj_coef(lp, colno, 0);
-                glp_set_col_kind(lp, colno, GLP_IV);
-            }*/
-            
             return lp;
         }
 

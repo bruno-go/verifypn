@@ -38,10 +38,12 @@ namespace PetriEngine {
             result_t _result = result_t::UKNOWN;
             std::vector<equation_t> _equations;
 
-            bool addEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, std::vector<equation_t>& equations);
+            bool _addEquationsImpl(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, int32_t variable_shift = 0) const;
+            bool addEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations) const;
+            bool addEquationsShifted(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, int32_t variable_shift = 0) const;
 
-            bool solve_built_lp(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime, bool set_result, bool delete_lp = true);
-            
+            result_t solve_built_lp(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime , bool delete_lp = true) const;
+            result_t solve_and_set(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime, bool delete_lp = true);
         public:
             void swap(LinearProgram& other)
             {
@@ -70,12 +72,10 @@ namespace PetriEngine {
             bool knownPossible() const { return _result == result_t::POSSIBLE; }
 
 
-
-            double upperBoundForPlace(const PQL::SimplificationContext& context, std::vector<uint32_t>& place, uint32_t solvetime);
             bool isImpossible(const PQL::SimplificationContext& context, uint32_t solvetime);
-            bool isFinalImpossibleWith(LinearProgram& withLp, bool is_next, bool is_strict, const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
+            bool isFinalImpossibleWith(const LinearProgram* withLp, bool is_next, bool is_strict, const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max()) const;
+            bool isFinalImpossibleWithN(const std::vector<uint32_t>& permutation, const std::vector<LinearProgram*>& lps, bool is_next, bool is_strict, const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max()) const;
             bool isNStepsImpossible(double firelimit, bool strict, const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
-            bool isBoundedImpossible(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime);
             void solvePotency(const PQL::SimplificationContext& context, std::vector<uint32_t>& potencies);
 
             void make_union(const LinearProgram& other);

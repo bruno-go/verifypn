@@ -13,7 +13,8 @@ namespace PetriEngine {
         {
             reset();
             if (context.timeout() || has_empty || solvetime == 0){ 
-                std::cout << "returning from timeout/empty\n";
+                if(context.timeout())
+                    std::cout << "returning from timeout\n";
                 return true;
             }
             if (_result != UNKNOWN)
@@ -28,26 +29,7 @@ namespace PetriEngine {
             return _result == POSSIBLE;
         }
 
-        bool AbstractProgramCollection::boundedSatisfiable(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime)
-        {
-            reset();
-            _result = UNKNOWN;
-            if (context.timeout() || has_empty || solvetime == 0){ 
-                std::cout << "returning from timeout/empty\n";
-                return true;
-            }
-            
-            boundedSatisfiableImpl(context, bounds, solvetime);
-
-            bool bounded_sat = _result == POSSIBLE;
-            _result = UNKNOWN;
-            return bounded_sat;
-        }
-
-        double AbstractProgramCollection::upperBound(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime){
-            return upperBoundImpl(context, place_set, solvetime);
-        }
-
+    
         nextProgram AbstractProgramCollection::get_next_program(){
             return getNextProgramImpl();
         }
@@ -130,35 +112,10 @@ namespace PetriEngine {
                 _result = IMPOSSIBLE;
         }
 
-        void UnionCollection::boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime)
-        {
-            for (int i = lps.size() - 1; i >= 0; --i)
-            {
-                if (lps[i]->boundedSatisfiable(context, bounds, solvetime) || context.timeout())
-                {
-                    _result = POSSIBLE;
-                    return;
-                }
-            }
-            if (_result != POSSIBLE)
-                _result = IMPOSSIBLE;
-        }
-
-        double UnionCollection::upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime)
-        {
-            double maxBound = -std::numeric_limits<double>::infinity();
-            for (int i = lps.size() - 1; i >= 0; --i)
-            {
-               maxBound = std::max(maxBound, lps[i]->upperBound(context, place_set, solvetime));
-            }
-            return maxBound;
-        }
-
+        
         nextProgram UnionCollection::getNextProgramImpl(){
             if(lps.size() == 0){
-                auto empty = SingleProgram();
-                AbstractProgramCollection_ptr p = std::make_shared<SingleProgram>(empty);
-                return {p, false};
+                return {std::make_shared<LinearProgram>(LinearProgram()), false};
             }
             assert(current < lps.size());
             AbstractProgramCollection_ptr prog = lps[current];
@@ -312,62 +269,14 @@ namespace PetriEngine {
             bool has_empty = false;
             next_prog = LinearProgram();
             bool hasmore = merge(has_empty, next_prog);
-            SingleProgram prog = SingleProgram(next_prog);
-            nextProgram np = {std::make_shared<SingleProgram>(prog), hasmore};
+            std::shared_ptr<LinearProgram> prog_ptr = std::make_shared<LinearProgram>(next_prog);
+            nextProgram np = {prog_ptr, hasmore};
 
             if(!hasmore){
                 reset();
             }
 
             return np;
-        }
-
-        void MergeCollection::boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime)
-        {
-            // this is where the magic needs to happen
-            bool hasmore = false;
-            do {
-                if (context.timeout())
-                {
-                    _result = POSSIBLE;
-                    break;
-                }
-
-                LinearProgram prog;
-                bool has_empty = false;
-                hasmore = merge(has_empty, prog);
-                if (has_empty)
-                {
-                    _result = POSSIBLE;
-                    return;
-                }
-                else
-                {
-                    if (context.timeout() ||
-                        !prog.isBoundedImpossible(context, bounds, solvetime))
-                    {
-                        _result = POSSIBLE;
-                        break;
-                    }
-                }
-                ++nsat;
-            } while (hasmore);
-            if (_result != POSSIBLE)
-                _result = IMPOSSIBLE;
-        }
-
-        double MergeCollection::upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime)
-        {
-            double maxBound = -std::numeric_limits<double>::infinity();
-            bool hasmore = false;
-            do {
-                LinearProgram prog;
-                bool has_empty = false;
-                hasmore = merge(has_empty, prog);
-                maxBound = std::max(maxBound, prog.upperBoundForPlace(context, place_set, solvetime));
-                ++nsat;
-            } while (hasmore);
-            return maxBound;
         }
 
         uint32_t MergeCollection::explorePotencyImpl(const PQL::SimplificationContext& context,
@@ -428,10 +337,6 @@ namespace PetriEngine {
             return false;
         }
 
-        double SingleProgram::upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime){
-            return program.upperBoundForPlace(context, place_set, solvetime);
-        }
-
         void SingleProgram::satisfiableImpl(const PQL::SimplificationContext& context, uint32_t solvetime)
         {
             // this is where the magic needs to happen
@@ -446,24 +351,10 @@ namespace PetriEngine {
         }
 
         nextProgram SingleProgram::getNextProgramImpl(){
-            auto e = *this;
-            AbstractProgramCollection_ptr p = std::make_shared<SingleProgram>(e);
-            return {p, false};
+            return {std::make_shared<LinearProgram>(program), false};
         }
 
-        void SingleProgram::boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime)
-        {
-            // this is where the magic needs to happen
-            if (!program.isBoundedImpossible(context, bounds, solvetime))
-            {
-                _result = POSSIBLE;
-            }
-            else
-            {
-                _result = IMPOSSIBLE;
-            }
-        }
-
+        
         uint32_t SingleProgram::explorePotencyImpl(const PQL::SimplificationContext& context,
             std::vector<uint32_t> &potencies, uint32_t maxConfigurationsSolved)
         {
@@ -474,8 +365,5 @@ namespace PetriEngine {
             return maxConfigurationsSolved - 1;
         }
 
-        bool SingleProgram::isBoundedImpossible(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime){
-            return program.isBoundedImpossible(context, bounds, solvetime);
-        }
     }
 }

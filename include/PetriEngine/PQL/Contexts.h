@@ -26,6 +26,7 @@
 #include "../Simplification/LPCache.h"
 #include "../NetStructures.h"
 #include "utils/structures/shared_string.h"
+#include "PetriEngine/options.h"
 
 #include "utils/errors.h"
 
@@ -178,6 +179,11 @@ namespace PetriEngine {
         };
 
         class SimplificationContext {
+            struct simplificationRules{
+                bool G_rule = false;
+                bool F_rule = false;
+                bool X_rule = false;
+            };
         public:
 
             SimplificationContext(const MarkVal* marking,
@@ -189,7 +195,6 @@ namespace PetriEngine {
                 _marking = marking;
                 _net = net;
                 _num_paths = num_paths;
-                std::cout << "paths: " << _num_paths << "\n";
                 _base_lp = buildBase();
                 _start = std::chrono::high_resolution_clock::now();
                 _cache = cache;
@@ -202,6 +207,14 @@ namespace PetriEngine {
 
                 _isDeadlocked = _net->deadlocked(_marking);
                 _id = std::chrono::system_clock::now();
+            }
+
+            SimplificationContext(const MarkVal* marking,
+                    const PetriNet* net, int num_paths, uint32_t queryTimeout, options_t& options,
+                    Simplification::LPCache* cache)
+                    :  SimplificationContext(marking, net, num_paths, queryTimeout, options.lpsolveTimeout, options.lpPrintLevel, cache){
+                        _rules = {options.useGRule, options.useFRule, options.useXRule};
+                
             }
 
             SimplificationContext(const MarkVal* marking,
@@ -280,6 +293,11 @@ namespace PetriEngine {
                 return _cache;
             }
 
+            const simplificationRules& rules() const
+            {
+                return _rules;
+            } 
+
             void addAllPathConstraint(glp_prob* lp, size_t t, size_t l, int32_t* ind, double* col) const;
             void addAllPathConstraint(glp_prob* lp, size_t t, size_t l, std::vector<int32_t>& ind, std::vector<double>& col) const;
 
@@ -289,6 +307,7 @@ namespace PetriEngine {
 
         private:
             uint32_t _num_paths = 1;
+            simplificationRules _rules;
             bool _negated;
             const MarkVal* _marking;
             bool _markingOutOfBounds;

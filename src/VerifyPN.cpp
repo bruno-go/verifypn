@@ -597,9 +597,8 @@ void simplify_queries(const MarkVal* marking,
                             }
                         }
                         num_paths = std::max(1, num_paths);
-                        std::cout << "Creating SimplificationContext with " << num_paths << " Hyper-Paths\n";
                         SimplificationContext simplificationContext(marking, net, num_paths, qt,
-                            options.lpsolveTimeout, options.lpPrintLevel, &cache);
+                            options, &cache);
                         if (simplificationContext.markingOutOfBounds()) {
                             std::cout << "WARNING: Initial marking contains a place or places with too many tokens. Query simplifaction for LTL is skipped.\n";
                             break;

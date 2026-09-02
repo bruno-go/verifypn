@@ -39,15 +39,14 @@ namespace PetriEngine { namespace PQL {
         SimplificationContext& _context;
         Retval _return_value;
 
-        enum LPQUANT {NONE, GLOBAL, FINAL, NEXT, UNTIL, OTHER, NULLT};
-        LPQUANT quantifier_found = LPQUANT::NONE;
-        LPQUANT quantifier_parent = LPQUANT::NONE;
-        bool qparent_neg_context = false;
-        int32_t quantifiers = 0;
+        enum LPOP {NONE, GLOBAL, FINAL, NEXT, UNTIL, OTHER, NULLT};
+        LPOP operator_found = LPOP::NONE;
+        LPOP operator_parent = LPOP::NONE;
+        bool op_parent_negated = false;
+        int32_t operators = 0;
       
-        bool solveFinalCond(std::vector<AbstractProgramCollection_ptr>& final_lps);
-
         bool finalLpsImpossible(std::vector<AbstractProgramCollection_ptr>& final_lps);
+        bool finalLpsImpossibleAll(std::vector<AbstractProgramCollection_ptr>& final_lps);
         bool nextLpsImpossible(std::vector<AbstractProgramCollection_ptr>& next_lps, std::vector<AbstractProgramCollection_ptr>& final_lps, bool is_invariant, bool is_or = false);
         bool isNextImpossible(AbstractProgramCollection_ptr next_lps, bool strict);
 
@@ -130,7 +129,7 @@ namespace PetriEngine { namespace PQL {
     };
 
     Member memberForPlace(size_t p, const SimplificationContext &context);
-    Member memberForTracePlace(size_t p, int trace, const SimplificationContext &context);
+    Member memberForPathPlace(size_t p, int trace, const SimplificationContext &context);
     Member constraint(const Expr *element, const SimplificationContext &context);
 
     class ConstraintVisitor : public ExpressionVisitor {

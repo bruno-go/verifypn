@@ -12,7 +12,7 @@ namespace PetriEngine {
 
         struct nextProgram
         {
-            std::shared_ptr<AbstractProgramCollection> prog;
+            std::shared_ptr<LinearProgram> prog;
             bool hasmore;
         };
         
@@ -23,8 +23,6 @@ namespace PetriEngine {
                 result_t _result = result_t::UNKNOWN;
                 bool has_empty = false;
 
-                virtual double upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime) = 0;
-                virtual void boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime) = 0;
                 virtual void satisfiableImpl(const PQL::SimplificationContext& context, uint32_t solvetime) = 0;
                 virtual uint32_t explorePotencyImpl(const PQL::SimplificationContext& context,
                                                     std::vector<uint32_t> &potencies,
@@ -32,12 +30,87 @@ namespace PetriEngine {
                 virtual nextProgram getNextProgramImpl() = 0;
 
             public:
+                /* do not create two iterators to the same collection, as they change the internal state */
+                struct NextProgramIterator{
+                    using interator_category = std::input_iterator_tag;
+                    using difference_type = std::ptrdiff_t;
+                    using value_type = LinearProgram*;
+                    NextProgramIterator() = default;
+
+                    NextProgramIterator(AbstractProgramCollection* collection)
+                        : _collection(collection) {
+                            _collection->reset();
+                            _next = _collection->get_next_program();
+                            //if(!_next.hasmore)
+                            //    _collection = nullptr;
+                            _next_ptr = _next.prog.get();}
+                    const value_type& operator*() const {
+                        return _next_ptr;
+                    }
+
+                    const LinearProgram* operator->() const {
+                        return _next.prog.get();
+                    }
+
+                    NextProgramIterator& operator++() {
+                        if(!_next.hasmore){ 
+                            _collection = nullptr;
+                        }else{
+                            _next = _collection->get_next_program();
+                            _next_ptr = _next.prog.get();
+                        }
+                        return *this;
+                    }
+
+                    NextProgramIterator operator++(int) {
+                        auto tmp = *this;
+                        ++*this;
+                        return tmp;
+                    }
+
+                    friend bool operator==(const NextProgramIterator& a,
+                                        const NextProgramIterator& b)
+                    {
+                        return a._collection == b._collection;
+                    }
+
+                    friend bool operator!=(const NextProgramIterator& a,
+                                        const NextProgramIterator& b)
+                    {
+                        return !(a == b);
+                    }
+                    private:
+                        AbstractProgramCollection* _collection = nullptr;
+                        LinearProgram* _next_ptr;
+                        nextProgram _next;
+                };
+                        
+                class ProgRange {
+                    public:
+                        ProgRange(AbstractProgramCollection* collection)
+                            : _collection(collection){}
+
+                        NextProgramIterator begin() {
+                            return NextProgramIterator(_collection);
+                        }
+
+                        NextProgramIterator end() {
+                            return {};
+                        }
+
+                    private:
+                        AbstractProgramCollection* _collection;
+                    };
+
+                ProgRange AllProgs() {
+                    reset();
+                    return ProgRange(this);
+                }
+                
                 virtual ~AbstractProgramCollection() {}
                 bool empty() { return has_empty; }
 
                 virtual bool satisfiable(const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
-                virtual bool boundedSatisfiable(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
-                virtual double upperBound(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
                 virtual nextProgram  get_next_program();
 
                 bool known_sat() { return _result == POSSIBLE; }
@@ -65,8 +138,6 @@ namespace PetriEngine {
             size_t _size = 0;
 
             void satisfiableImpl(const PQL::SimplificationContext& context, uint32_t solvetime) override;
-            void boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime) override;
-            double upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime) override;
             uint32_t explorePotencyImpl(const PQL::SimplificationContext& context,
                                         std::vector<uint32_t> &potencies,
                                         uint32_t maxConfigurationsSolved) override;
@@ -100,8 +171,6 @@ namespace PetriEngine {
             LinearProgram next_prog;
 
             void satisfiableImpl(const PQL::SimplificationContext& context, uint32_t solvetime) override;
-            void boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime) override;
-            double upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime) override;
             uint32_t explorePotencyImpl(const PQL::SimplificationContext& context,
                                         std::vector<uint32_t> &potencies,
                                         uint32_t maxConfigurationsSolved) override;
@@ -123,8 +192,6 @@ namespace PetriEngine {
 
         protected:
             void satisfiableImpl(const PQL::SimplificationContext& context, uint32_t solvetime) override;
-            void boundedSatisfiableImpl(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime) override;
-            double upperBoundImpl(const PQL::SimplificationContext& context, std::vector<uint32_t>& place_set, uint32_t solvetime) override;
             uint32_t explorePotencyImpl(const PQL::SimplificationContext& context,
                                         std::vector<uint32_t> &potencies,
                                         uint32_t maxConfigurationsSolved) override;
@@ -141,7 +208,6 @@ namespace PetriEngine {
             void reset() override {}
             size_t size() const override { return 1; }
             bool merge(bool& has_empty, LinearProgram& program, bool dry_run = false) override;
-            bool isBoundedImpossible(const PQL::SimplificationContext& context, std::vector<std::pair<std::vector<uint32_t>, double>>& bounds, uint32_t solvetime);
 
             LinearProgram getProgram() const{
                 return program;
