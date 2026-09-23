@@ -171,8 +171,11 @@ namespace PetriEngine {
                                 compile_program();
                                 auto& flps = time_path->final_lps;
                                 auto& freelps = time_path->free_lps;
+                                auto& nextlps = time_path->next_lps;
                                 std::move(freelps.begin(), freelps.end(), std::back_inserter(flps));
+                                std::move(nextlps.begin(), nextlps.end(), std::back_inserter(flps));
                                 freelps.clear();
+                                nextlps.clear();
                                 time_path->global_lps.clear();
                                 update_next_counter(flps, next_ops);
                                 break;
