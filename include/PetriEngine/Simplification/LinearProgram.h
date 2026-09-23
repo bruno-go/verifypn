@@ -37,12 +37,16 @@ namespace PetriEngine {
             enum result_t { UKNOWN, IMPOSSIBLE, POSSIBLE };
             result_t _result = result_t::UKNOWN;
             std::vector<equation_t> _equations;
+            // does the writing
+            static bool _writeEquationsImpl(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, bool allocate, int32_t variable_shift = 0);
+            // adds rows to the lp, works from empty lp
+            static bool pushEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations);
+            static bool pushEquationsShifted(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, int32_t variable_shift = 0);
+            // does not add rows to the lp, requires pre-allocating
+            static bool emplaceEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations);
+            static bool emplaceEquationsShifted(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, int32_t variable_shift = 0);
 
-            bool _addEquationsImpl(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, int32_t variable_shift = 0) const;
-            bool addEquations(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations) const;
-            bool addEquationsShifted(glp_prob* lp, const PQL::SimplificationContext& context, int& rowno, std::vector<REAL>& row, std::vector<int32_t>& indir, const std::vector<equation_t>& equations, int32_t variable_shift = 0) const;
-
-            result_t solve_built_lp(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime , bool delete_lp = true) const;
+            static result_t solve_built_lp(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime , bool delete_lp = true);
             result_t solve_and_set(glp_prob* lp, const PQL::SimplificationContext& context, uint32_t solvetime, bool delete_lp = true);
         public:
             void swap(LinearProgram& other)
@@ -78,8 +82,12 @@ namespace PetriEngine {
             bool isNStepsImpossible(double firelimit, bool strict, const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
             void solvePotency(const PQL::SimplificationContext& context, std::vector<uint32_t>& potencies);
 
+            static bool solveFinalConjunctionImpossible(const LinearProgram* freelp, const std::vector<LinearProgram*>& lps,const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
+        private:
+            static bool isFinalPermutationImpossible(glp_prob* lp, const LinearProgram* freelp, const std::vector<uint32_t>& permutation, const std::vector<LinearProgram*>& lps,const PQL::SimplificationContext& context, uint32_t solvetime = std::numeric_limits<uint32_t>::max());
+        public:    
             void make_union(const LinearProgram& other);
-
+        
             std::ostream& print(std::ostream& ss, size_t indent = 0) const
             {
                 for (size_t i = 0; i < indent ; ++i) ss << "\t";

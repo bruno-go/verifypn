@@ -43,6 +43,7 @@ namespace PetriEngine { namespace PQL {
         LPOP operator_found = LPOP::NONE;
         LPOP operator_parent = LPOP::NONE;
         bool op_parent_negated = false;
+        AbstractProgramCollection::temporalContext tcx;
         int32_t operators = 0;
       
         bool finalLpsImpossible(std::vector<AbstractProgramCollection_ptr>& final_lps);
