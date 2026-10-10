@@ -203,7 +203,8 @@ ReturnValue contextAnalysis(bool colored, const shared_name_name_map& transition
 
 
 std::vector<Condition_ptr>
-parseXMLQueries(shared_string_set& string_set, std::vector<std::string>& qstrings, std::istream& qfile, const std::set<size_t>& qnums, bool binary) {
+parseXMLQueries(shared_string_set& string_set, std::vector<std::string>& qstrings, std::istream& qfile,
+                const std::set<size_t>& qnums, bool binary, const ColoredPetriNetBuilder* coloredNet) {
     std::vector<QueryItem> queries;
     std::vector<Condition_ptr> conditions;
     if (binary) {
@@ -216,7 +217,7 @@ parseXMLQueries(shared_string_set& string_set, std::vector<std::string>& qstring
         }
         queries = std::move(parser.queries);
     } else {
-        QueryXMLParser parser(string_set);
+        QueryXMLParser parser(string_set, coloredNet);
         if (!parser.parse(qfile, qnums)) {
             fprintf(stderr, "Error: Failed parsing XML query file\n");
             fprintf(stdout, "DO_NOT_COMPETE\n");
@@ -255,7 +256,8 @@ parseXMLQueries(shared_string_set& string_set, std::vector<std::string>& qstring
 }
 
 std::vector<Condition_ptr >
-readQueries(shared_string_set& string_set, options_t& options, std::vector<std::string>& qstrings) {
+readQueries(shared_string_set& string_set, options_t& options, std::vector<std::string>& qstrings,
+            const ColoredPetriNetBuilder* coloredNet) {
 
     std::vector<Condition_ptr > conditions;
     if (!options.statespaceexploration) {
@@ -280,7 +282,8 @@ readQueries(shared_string_set& string_set, options_t& options, std::vector<std::
                 throw base_error("Error parsing: ", qstrings.back());
             conditions.emplace_back(q);
         } else {
-            conditions = parseXMLQueries(string_set, qstrings, qfile, options.querynumbers, options.binary_query_io & 1);
+            conditions = parseXMLQueries(string_set, qstrings, qfile, options.querynumbers,
+                                         options.binary_query_io & 1, coloredNet);
         }
         qfile.close();
         return conditions;
@@ -580,9 +583,25 @@ void simplify_queries(const MarkVal* marking,
 
                     bool wasAGCPNApprox = dynamic_cast<NotCondition*> (queries[i].get()) != nullptr;
                     if (options.logic == TemporalLogic::LTL) {
+                        int num_paths = 0;
                         if (options.queryReductionTimeout == 0 || qt == 0) continue;
-                        SimplificationContext simplificationContext(marking, net, qt,
-                            options.lpsolveTimeout, options.lpPrintLevel, &cache);
+
+                        if(auto path = dynamic_cast<PathQuant*>(queries[i].get())) {
+                            bool wasACond = path->is<AllPaths>();
+                            for(;path; path = dynamic_cast<PathQuant*>(path->child().get()))
+                            {
+                                if(wasACond != path->is<AllPaths>())
+                                {
+                                    std::stringstream ss;
+                                    queries[i]->toString(ss);
+                                    throw base_error("Missing Hyper-LTL quantifiers: ", ss.str());
+                                }
+                                num_paths++;
+                            }
+                        }
+                        num_paths = std::max(1, num_paths);
+                        SimplificationContext simplificationContext(marking, net, num_paths, qt,
+                            options, &cache);
                         if (simplificationContext.markingOutOfBounds()) {
                             std::cout << "WARNING: Initial marking contains a place or places with too many tokens. Query simplifaction for LTL is skipped.\n";
                             break;

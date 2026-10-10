@@ -21,6 +21,15 @@ namespace PetriEngine::ExplicitColored {
         }
     }
 
+    void ColoredPetriNet::extractInhibitorVariables(const Transition_t transition, std::set<Variable_t>& out) const {
+        for (auto i = _transitionInhibitors[transition]; i < _transitionInhibitors[transition + 1]; ++i) {
+            if (_inhibitorArcs[i].expression != nullptr) {
+                const auto& vars = _inhibitorArcs[i].expression->getVariables();
+                out.insert(vars.begin(), vars.end());
+            }
+        }
+    }
+
     const std::set<Variable_t>& ColoredPetriNet::getAllTransitionVariables(const Transition_t transition) const {
         return _transitions[transition].variables;
     }

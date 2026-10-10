@@ -330,7 +330,7 @@ namespace PetriEngine {
                     const std::string& start = c->getColorType()->operator[](size_t{0}).getColorName();
                     const std::string& end = c->getColorType()->operator[](
                             c->getColorType()->size() - 1).getColorName();
-                    _out << increaseTabs() << "<finiteintrangeconstant value=\"" << c->getColorName() << "\">\n>";
+                    _out << increaseTabs() << "<finiteintrangeconstant value=\"" << c->getColorName() << "\">\n";
                     _out << increaseTabs() << "<finiteintrange start=\"" << start << "\" end=\"" << end << "\"/>\n";
                     _out << decreaseTabs() << "</finiteintrangeconstant>\n";
                 } else {
@@ -431,41 +431,20 @@ namespace PetriEngine {
                 shared_const_string target = _builder._transitions[inhibitor.transition].name;
                 std::string id = *source + "_to_" + *target;
                 _out << getTabs() << "<arc id=\"" << id << "\" source=\"" << *source << "\" target=\"" << *target
-                     << "\" type=\"inhibitor" << "\">\n";
+                     << "\" type=\"inhibitor\" weight=\"" << inhibitor.inhib_weight << "\">\n";
                 _out << increaseTabs() << "<name>\n";
                 _out << increaseTabs() << "<text>" << id << "</text>\n";
                 _out << decreaseTabs() << "</name>\n";
-                _out << getTabs() << "<hlinscription>\n";
-
-                _out << increaseTabs() << "<text>" << inhibitor.inhib_weight << "'" << place.type->getName() << ".all"
-                     << "</text>\n";
-                _out << getTabs() << "<structure>\n";
-                writeInhibitorExpressionToPnml(inhibitor);
-                _out << decreaseTabs() << "</structure>\n";
-                _out << decreaseTabs() << "</hlinscription>\n";
+                if (inhibitor.expr != nullptr) {
+                    _out << getTabs() << "<hlinscription>\n";
+                    _out << increaseTabs() << "<text>" << to_string(*inhibitor.expr) << "</text>\n";
+                    _out << getTabs() << "<structure>\n";
+                    writeExpressionToPnml(_out, getTabsCount(), *inhibitor.expr);
+                    _out << getTabs() << "</structure>\n";
+                    _out << decreaseTabs() << "</hlinscription>\n";
+                }
                 _out << decreaseTabs() << "</arc>\n";
             }
-        }
-
-        void PnmlWriter::writeInhibitorExpressionToPnml(Colored::Arc inhibitor) {
-            _out << increaseTabs() << "<numberof>\n";
-
-            //First subterm with the multiplicity
-            _out << increaseTabs() << "<subterm>\n";
-            _out << increaseTabs() << "<numberconstant value=\"" << inhibitor.inhib_weight << "\">\n";
-            _out << increaseTabs() << "<positive/>\n";
-            _out << decreaseTabs() << "</numberconstant>\n";
-            _out << decreaseTabs() << "</subterm>\n";
-
-            //Second subterm with the colortype
-            _out << getTabs() << "<subterm>\n";
-            _out << increaseTabs() << "<all>\n";
-            Place &place = _builder._places[inhibitor.place];
-            _out << increaseTabs() << "<usersort declaration=\"" << place.type->getName() << "\"/>\n";
-            _out << decreaseTabs() << "</all>\n";
-            _out << decreaseTabs() << "</subterm>\n";
-
-            _out << decreaseTabs() << "</numberof>\n";
         }
 
         void PnmlWriter::metaInfoClose() {

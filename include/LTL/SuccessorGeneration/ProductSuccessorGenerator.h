@@ -204,7 +204,7 @@ namespace LTL {
          */
         bool guard_valid(const PetriEngine::Structures::State &state, bdd bdd)
         {
-            PetriEngine::PQL::EvaluationContext ctx{state.marking(), &_net};
+            PetriEngine::PQL::EvaluationContext ctx{state.marking(), &_net, _successor_generator.state_size() / _net.numberOfPlaces()};
             auto res = _buchi_succ_gen.automaton().guard_valid(ctx, bdd);
             return res;
         }

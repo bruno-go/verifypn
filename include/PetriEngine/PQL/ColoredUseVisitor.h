@@ -59,9 +59,13 @@ namespace PetriEngine { namespace PQL {
 
         void _accept(const IdentifierExpr *element) override;
 
+        void _accept(const UnfoldedIdentifierExpr *element) override;
+
         void _accept(const LiteralExpr *element) override;
 
         void _accept(const MinusExpr *element) override;
+
+        void _accept(const CommutativeExpr *element) override;
 
         void _accept(const NaryExpr *element) override;
 

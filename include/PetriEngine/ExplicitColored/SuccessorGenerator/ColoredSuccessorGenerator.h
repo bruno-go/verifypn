@@ -50,7 +50,8 @@ namespace PetriEngine::ExplicitColored {
         void fire(ColoredPetriNetMarking& state, Transition_t tid, const Binding& binding) const;
     protected:
         [[nodiscard]] bool check(const ColoredPetriNetMarking& state, Transition_t tid, const Binding& binding) const;
-        [[nodiscard]] bool checkInhibitor(const ColoredPetriNetMarking& state, Transition_t tid) const;
+        [[nodiscard]] bool checkInhibitor(const ColoredPetriNetMarking& state, Transition_t tid,
+            const Binding* binding = nullptr) const;
         [[nodiscard]] bool checkPresetAndGuard(const ColoredPetriNetMarking& state, Transition_t tid, const Binding& binding) const;
         void consumePreset(ColoredPetriNetMarking& state, Transition_t tid, const Binding& binding) const;
         void producePostset(ColoredPetriNetMarking& state, Transition_t tid, const Binding& binding) const;

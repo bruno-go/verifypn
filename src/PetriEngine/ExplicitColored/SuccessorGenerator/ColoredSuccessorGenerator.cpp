@@ -38,7 +38,7 @@ namespace PetriEngine::ExplicitColored{
     }
 
     bool ColoredSuccessorGenerator::check(const ColoredPetriNetMarking& state, const Transition_t tid, const Binding& binding) const{
-        return checkInhibitor(state, tid) && checkPresetAndGuard(state, tid, binding);
+        return checkInhibitor(state, tid, &binding) && checkPresetAndGuard(state, tid, binding);
     }
 
     bool ColoredSuccessorGenerator::checkPresetAndGuard(const ColoredPetriNetMarking& state, const Transition_t tid, const Binding& binding) const {
@@ -54,10 +54,34 @@ namespace PetriEngine::ExplicitColored{
         return true;
     }
 
-    bool ColoredSuccessorGenerator::checkInhibitor(const ColoredPetriNetMarking& state, const Transition_t tid) const {
+    bool ColoredSuccessorGenerator::checkInhibitor(const ColoredPetriNetMarking& state, const Transition_t tid,
+        const Binding* binding) const {
         for (size_t i = _net._transitionInhibitors[tid]; i < _net._transitionInhibitors[tid + 1]; i++){
             auto& inhib = _net._inhibitorArcs[i];
-            if (inhib.weight <= state.markings[inhib.from].totalCount()){
+            if (inhib.expression == nullptr) {
+                if (inhib.weight <= state.markings[inhib.from].totalCount()) return false;
+                continue;
+            }
+
+            if (binding == nullptr) continue;
+
+            const auto& selectedColors = inhib.expression->eval(*binding);
+            Color_t selected = 0;
+            bool found = false;
+            for (const auto& [color, count] : selectedColors.counts()) {
+                if (count <= 0) continue;
+                if (found && selected != color) {
+                    throw base_error("An inhibitor arc must select exactly one color");
+                }
+                selected = color;
+                found = true;
+            }
+
+            if (!found) {
+                throw base_error("An inhibitor arc must select exactly one color");
+            }
+            
+            if (inhib.weight <= state.markings[inhib.from].getCount(ColorSequence{selected})) {
                 return false;
             }
         }
@@ -173,7 +197,7 @@ namespace PetriEngine::ExplicitColored{
         }
 
         if (totalBindings == 0) {
-            if (bid == 0 && checkPresetAndGuard(marking, tid, Binding{})) {
+            if (bid == 0 && check(marking, tid, Binding{})) {
                 return bid;
             }
             return std::numeric_limits<Binding_t>::max();
@@ -191,7 +215,7 @@ namespace PetriEngine::ExplicitColored{
         if (constraintDataIt == _constraintData.end()) {
             for (auto i = bid; i < totalBindings; i++) {
                 getBinding(tid, i, binding);
-                if (checkPresetAndGuard(marking, tid, binding)) {
+                if (check(marking, tid, binding)) {
                     return i;
                 }
             }
@@ -214,7 +238,7 @@ namespace PetriEngine::ExplicitColored{
                 }
             }
 
-            if (checkPresetAndGuard(marking, tid, binding)) {
+            if (check(marking, tid, binding)) {
                 return bid;
             }
         }

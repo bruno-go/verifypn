@@ -124,7 +124,9 @@ ReturnValue contextAnalysis(bool colored, const shared_name_name_map& transition
                             PetriNetBuilder& builder, const PetriNet* net,
                             std::vector<std::shared_ptr<Condition> >& queries);
 
-std::vector<Condition_ptr > readQueries(shared_string_set& string_set, options_t& options, std::vector<std::string>& qstrings);
+std::vector<Condition_ptr> readQueries(shared_string_set& string_set, options_t& options,
+                                       std::vector<std::string>& qstrings,
+                                       const PetriEngine::ColoredPetriNetBuilder* coloredNet = nullptr);
 
 void printStats(PetriNetBuilder& builder, options_t& options);
 
@@ -166,6 +168,7 @@ void initialize_potency(const MarkVal* marking, const PetriNet* net,
 
 std::vector<Condition_ptr>
 parseXMLQueries(shared_string_set& string_set, std::vector<std::string>& qstrings,
-                std::istream& qfile, const std::set<size_t>& qnums, bool binary = false);
+                std::istream& qfile, const std::set<size_t>& qnums, bool binary = false,
+                const PetriEngine::ColoredPetriNetBuilder* coloredNet = nullptr);
 
 #endif /* VERIFYPN_H */

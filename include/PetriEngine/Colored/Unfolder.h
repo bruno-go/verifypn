@@ -48,7 +48,8 @@ namespace PetriEngine {
             void unfoldTransition(PetriNetBuilder& builder, uint32_t transitionId);
             void handleOrphanPlace(PetriNetBuilder& ptBuilder, const Colored::Place& place, const shared_name_index_map& unfoldedPlaceMap);
             void createPartionVarmaps();
-            void unfoldInhibitorArc(PetriNetBuilder& ptBuilder, const shared_const_string &oldname, const shared_const_string &newname);
+            void unfoldInhibitorArc(PetriNetBuilder& ptBuilder, const shared_const_string &oldname,
+                const shared_const_string &newname, const Colored::BindingMap& binding);
             std::string arc_to_string(const Colored::Arc& arc) const;
             void unfoldArc(PetriNetBuilder& ptBuilder, const Colored::Arc& arc, const Colored::BindingMap& binding, const shared_const_string& name);
             double _time = 0;
@@ -99,4 +100,3 @@ namespace PetriEngine {
 }
 
 #endif /* UNFOLDER_H */
-

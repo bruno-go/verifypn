@@ -36,10 +36,11 @@ namespace PetriEngine::ExplicitColored {
             const std::unordered_map<std::string, uint32_t>& placeNameIndices,
             const std::unordered_map<std::string, Transition_t>& transitionNameIndices,
             size_t seed,
-            bool createTrace
+            bool createTrace,
+            uint32_t kbound
         );
 
-        bool check(Strategy searchStrategy, ColoredSuccessorGeneratorOption coloredSuccessorGeneratorOption);
+        Reachability::AbstractHandler::Result check(Strategy searchStrategy, ColoredSuccessorGeneratorOption coloredSuccessorGeneratorOption);
         [[nodiscard]] const SearchStatistics& GetSearchStatistics() const;
         std::optional<uint64_t> getCounterExampleId() const;
         std::optional<std::vector<InternalTraceStep>> getTraceTo(uint64_t counterExampleId) const;
@@ -50,26 +51,28 @@ namespace PetriEngine::ExplicitColored {
         const ColoredPetriNet& _net;
         const ColoredSuccessorGenerator _successorGenerator;
         const size_t _seed;
+        uint32_t _kbound;
         bool _fullStatespace = true;
         bool _createTrace;
         StateMap _stateMap;
         SearchStatistics _searchStatistics;
         template <typename SuccessorGeneratorState>
-        [[nodiscard]] bool _search(Strategy searchStrategy);
+        [[nodiscard]] Reachability::AbstractHandler::Result _search(Strategy searchStrategy);
         [[nodiscard]] bool _check(const ColoredPetriNetMarking& state, size_t id) const;
+        [[nodiscard]] uint64_t _tokenCount(const ColoredPetriNetMarking& marking) const;
 
         template <typename T>
-        [[nodiscard]] bool _dfs();
+        [[nodiscard]] Reachability::AbstractHandler::Result _dfs();
         template <typename T>
-        [[nodiscard]] bool _bfs();
+        [[nodiscard]] Reachability::AbstractHandler::Result _bfs();
         template <typename T>
-        [[nodiscard]] bool _rdfs();
+        [[nodiscard]] Reachability::AbstractHandler::Result _rdfs();
         template <typename T>
-        [[nodiscard]] bool _bestfs();
+        [[nodiscard]] Reachability::AbstractHandler::Result _bestfs();
 
         template <template <typename> typename WaitingList, typename T>
-        [[nodiscard]] bool _genericSearch(WaitingList<T> waiting);
-        [[nodiscard]] bool _getResult(bool found, bool fullStatespace) const;
+        [[nodiscard]] Reachability::AbstractHandler::Result _genericSearch(WaitingList<T> waiting);
+        [[nodiscard]] Reachability::AbstractHandler::Result _getResult(bool found, bool fullStatespace) const;
     };
 }
 

@@ -43,7 +43,9 @@ namespace PetriEngine {
 
             bool operator == (const Arc& other) const
             {
-                return place == other.place && transition == other.transition && input == other.input && inhib_weight == other.inhib_weight && (inhib_weight > 0 || to_string(*expr) == to_string(*other.expr));
+                return place == other.place && transition == other.transition && input == other.input &&
+                    inhib_weight == other.inhib_weight &&
+                    ((!expr && !other.expr) || (expr && other.expr && to_string(*expr) == to_string(*other.expr)));
             }
         };
 
@@ -81,4 +83,3 @@ namespace PetriEngine {
 }
 
 #endif /* COLOREDNETSTRUCTURES_H */
-

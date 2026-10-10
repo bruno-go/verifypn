@@ -26,6 +26,7 @@
 #include "../Simplification/LPCache.h"
 #include "../NetStructures.h"
 #include "utils/structures/shared_string.h"
+#include "PetriEngine/options.h"
 
 #include "utils/errors.h"
 
@@ -118,15 +119,31 @@ namespace PetriEngine {
 
             /** Create evaluation context, this doesn't take ownership */
             EvaluationContext(const MarkVal* marking,
-                    const PetriNet* net) {
+                    const PetriNet* net,
+                    size_t traces = 1) {
                 _marking = marking;
                 _net = net;
+                _traces = traces;
             }
 
             EvaluationContext() {};
 
+            const MarkVal* marking(size_t trace) const {
+                if (!_marking) return nullptr;
+                const size_t place_offset = (_traces > 1 && _net) ? trace * _net->numberOfPlaces() : 0;
+                return _marking + place_offset;
+            }
+
             const MarkVal* marking() const {
-                return &_marking[_offset];
+                return marking(_offset);
+            }
+
+            MarkVal tokens(size_t place, size_t trace) const {
+                return marking(trace)[place];
+            }
+
+            MarkVal tokens(size_t place) const {
+                return marking(_offset)[place];
             }
 
             void setMarking(MarkVal* marking) {
@@ -137,14 +154,23 @@ namespace PetriEngine {
                 return _net;
             }
 
+            size_t offset() const {
+                return _offset;
+            }
+
             void set_offset(size_t i) {
                 _offset = i;
+            }
+
+            size_t traces() const {
+                return _traces;
             }
 
         private:
             const MarkVal* _marking = nullptr;
             const PetriNet* _net = nullptr;
             size_t _offset = 0;
+            size_t _traces = 1;
         };
 
         /** Context for distance computation */
@@ -178,16 +204,22 @@ namespace PetriEngine {
         };
 
         class SimplificationContext {
+            struct simplificationRules{
+                bool G_rule = false;
+                bool F_rule = false;
+                bool X_rule = false;
+            };
         public:
 
             SimplificationContext(const MarkVal* marking,
-                    const PetriNet* net, uint32_t queryTimeout, uint32_t lpTimeout, uint32_t lpPrintLevel,
+                    const PetriNet* net, int num_paths, uint32_t queryTimeout, uint32_t lpTimeout, uint32_t lpPrintLevel,
                     Simplification::LPCache* cache, uint32_t potencyTimeout = 0)
                     : _queryTimeout(queryTimeout), _lpTimeout(lpTimeout), _lpPrintLevel(lpPrintLevel),
                     _potencyTimeout(potencyTimeout) {
                 _negated = false;
                 _marking = marking;
                 _net = net;
+                _num_paths = num_paths;
                 _base_lp = buildBase();
                 _start = std::chrono::high_resolution_clock::now();
                 _cache = cache;
@@ -198,8 +230,22 @@ namespace PetriEngine {
                     }
                 }
 
+                _isDeadlocked = _net->deadlocked(_marking);
                 _id = std::chrono::system_clock::now();
             }
+
+            SimplificationContext(const MarkVal* marking,
+                    const PetriNet* net, int num_paths, uint32_t queryTimeout, options_t& options,
+                    Simplification::LPCache* cache)
+                    :  SimplificationContext(marking, net, num_paths, queryTimeout, options.lpsolveTimeout, options.lpPrintLevel, cache){
+                        _rules = {options.useGRule, options.useFRule, options.useXRule};
+                        _permutationLimit = static_cast<uint64_t>(options.permutationLimit);
+                
+            }
+
+            SimplificationContext(const MarkVal* marking,
+                    const PetriNet* net, uint32_t queryTimeout, uint32_t lpTimeout, uint32_t lpPrintLevel,
+                    Simplification::LPCache* cache, uint32_t potencyTimeout = 0) : SimplificationContext(marking, net, 1, queryTimeout, lpTimeout, lpPrintLevel, cache, potencyTimeout){};
 
             std::chrono::time_point<std::chrono::system_clock> _id;
 
@@ -216,6 +262,10 @@ namespace PetriEngine {
 
             bool markingOutOfBounds() const {
                 return _markingOutOfBounds;
+            }
+
+            bool isDeadlocked() const {
+                return _isDeadlocked;
             }
 
             const PetriNet* net() const {
@@ -252,19 +302,48 @@ namespace PetriEngine {
             uint32_t getPotencyTimeout() const;
             uint32_t getPrintLevel() const;
 
+            uint32_t numPaths() const{
+                return _num_paths;
+            }
+
+            uint32_t getNumBaseVariables() const{
+                return _num_paths * (_net->numberOfPlaces() + _net->numberOfTransitions());
+            }
+
+            uint32_t getNumBaseConstraints() const{
+                return _num_paths * _net->numberOfPlaces();
+            }
+
             Simplification::LPCache* cache() const
             {
                 return _cache;
             }
+
+            const simplificationRules& rules() const
+            {
+                return _rules;
+            } 
+
+            const uint64_t getPermutationLimit() const
+            {
+                return _permutationLimit;
+            }
+
+            void addAllPathConstraint(glp_prob* lp, size_t t, size_t l, int32_t* ind, double* col) const;
+            void addAllPathConstraint(glp_prob* lp, size_t t, size_t l, std::vector<int32_t>& ind, std::vector<double>& col) const;
 
             glp_prob* makeBaseLP() const;
 
             glp_prob* buildBaseFromMarking(std::vector<std::pair<std::vector<uint32_t>, double>>& setMarking) const;
 
         private:
+            uint32_t _num_paths = 1;
+            simplificationRules _rules;
+            uint64_t _permutationLimit = 128;
             bool _negated;
             const MarkVal* _marking;
             bool _markingOutOfBounds;
+            bool _isDeadlocked;
             const PetriNet* _net;
             uint32_t _queryTimeout, _lpTimeout, _lpPrintLevel, _potencyTimeout;
             mutable glp_prob* _base_lp = nullptr;

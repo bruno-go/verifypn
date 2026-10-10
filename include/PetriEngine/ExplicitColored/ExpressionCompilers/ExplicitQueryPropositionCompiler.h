@@ -18,6 +18,7 @@ namespace PetriEngine::ExplicitColored {
     class ExplicitQueryPropositionCompiler {
     public:
         ExplicitQueryPropositionCompiler(
+            const ColoredPetriNet& net,
             const std::unordered_map<std::string, uint32_t>& placeNameIndices,
             const std::unordered_map<std::string, uint32_t>& transitionNameIndices,
             const ColoredSuccessorGenerator& successorGenerator
@@ -26,6 +27,7 @@ namespace PetriEngine::ExplicitColored {
         [[nodiscard]] std::unique_ptr<ExplicitQueryProposition> compile(const PQL::Condition_ptr& expression) const;
 
     private:
+        const ColoredPetriNet& _net;
         const std::unordered_map<std::string, uint32_t>& _placeNameIndices;
         const std::unordered_map<std::string, uint32_t>& _transitionNameIndices;
         ColoredSuccessorGenerator _successorGenerator;
@@ -33,4 +35,3 @@ namespace PetriEngine::ExplicitColored {
 }
 
 #endif //EXPLICITQUERYPROPOSITIONCOMPILER_H
-

@@ -326,9 +326,8 @@ namespace PetriEngine {
         uint32_t UnfoldedUpperBoundsCondition::distance(DistanceContext& context) const
         {
             size_t tmp = 0;
-            for(auto& p : _places)
-            {
-                tmp += context.marking()[p._place];
+            for (auto& p : _places) {
+                tmp += context.tokens(p._place);
             }
 
             return _max - tmp;
@@ -386,7 +385,7 @@ namespace PetriEngine {
             {
                 for(auto& c : _constraints)
                 {
-                    auto pv = context.marking()[c._place];
+                    auto pv = context.tokens(c._place);
                     d += (c._upper == std::numeric_limits<uint32_t>::max() ? 0 : delta<LessThanOrEqualCondition>(pv, c._upper, neg)) +
                          (c._lower == 0 ? 0 : delta<LessThanOrEqualCondition>(c._lower, pv, neg));
                 }
@@ -396,7 +395,7 @@ namespace PetriEngine {
                 bool first = true;
                 for(auto& c : _constraints)
                 {
-                    auto pv = context.marking()[c._place];
+                    auto pv = context.tokens(c._place);
                     if(c._upper != std::numeric_limits<uint32_t>::max())
                     {
                         auto d2 = delta<LessThanOrEqualCondition>(pv, c._upper, neg);

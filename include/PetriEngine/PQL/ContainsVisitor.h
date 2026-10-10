@@ -36,8 +36,12 @@ namespace PetriEngine
         template<typename K>
         bool found_type(K element)
         {
-            if(std::is_same<const T*,K>::value)
-                _value = true;
+            if constexpr (std::is_pointer_v<K>) {
+                if constexpr (std::is_same_v<T, std::remove_cv_t<std::remove_pointer_t<K>>>) {
+                    _value = true;
+                }
+            }
+
             return _value;
         }
 
@@ -121,14 +125,28 @@ namespace PetriEngine
             }
         }
 
+        template<typename K>
+        void handleCommutativeExpr(K element)
+        {
+            if (found_type(element)) return;
+            if constexpr (std::is_same_v<T, UnfoldedIdentifierExpr>) {
+                if (!element->places().empty()) {
+                    _value = true;
+                    return;
+                }
+            }
+            
+            handleNaryExpr(element);
+        }
+
         virtual void _accept(const PlusExpr* element) override
         {
-            handleNaryExpr<decltype(element)>(element);
+            handleCommutativeExpr(element);
         }
 
         virtual void _accept(const MultiplyExpr* element) override
         {
-            handleNaryExpr<decltype(element)>(element);
+            handleCommutativeExpr(element);
         }
 
         virtual void _accept(const MinusExpr* element) override
@@ -191,6 +209,29 @@ namespace PetriEngine
             Visitor::visit(this, (*el)[0]);
             if(_value) return;
             Visitor::visit(this, (*el)[1]);
+        }
+
+        virtual void _accept(const PathQuant* element) override {
+            if (found_type(element)) return;
+            Visitor::visit(this, element->child());
+        }
+
+        virtual void _accept(const ExistPath* element) override {
+            _accept(static_cast<const PathQuant*>(element));
+        }
+
+        virtual void _accept(const AllPaths* element) override {
+            _accept(static_cast<const PathQuant*>(element));
+        }
+
+        virtual void _accept(const PathSelectCondition* element) override {
+            if (found_type(element)) return;
+            Visitor::visit(this, element->child());
+        }
+
+        virtual void _accept(const PathSelectExpr* element) override {
+            if (found_type(element)) return;
+            Visitor::visit(this, element->child());
         }
 
         // shallow elements, neither of these should exist in a compiled expression

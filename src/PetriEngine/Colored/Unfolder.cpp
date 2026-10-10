@@ -163,7 +163,7 @@ namespace PetriEngine {
                     }
 
                     _pttransitionnames[transition.name].push_back(name);
-                    unfoldInhibitorArc(ptBuilder, transition.name, name);
+                    unfoldInhibitorArc(ptBuilder, transition.name, name, b);
                 }
                 if (!hasBindings) {
                     _pttransitionnames[transition.name] = std::vector<shared_const_string>();
@@ -185,15 +185,43 @@ namespace PetriEngine {
                         unfoldArc(ptBuilder, arc, b, name);
                     }
                     _pttransitionnames[transition.name].push_back(name);
-                    unfoldInhibitorArc(ptBuilder, transition.name, name);
+                    unfoldInhibitorArc(ptBuilder, transition.name, name, b);
                 }
             }
         }
 
-        void Unfolder::unfoldInhibitorArc(PetriNetBuilder& ptBuilder, const shared_const_string &oldname, const shared_const_string &newname) {
+        void Unfolder::unfoldInhibitorArc(PetriNetBuilder& ptBuilder, const shared_const_string &oldname,
+            const shared_const_string &newname, const Colored::BindingMap& binding) {
             for (uint32_t i = 0; i < _builder.inhibitors().size(); ++i) {
                 if (*_builder.transitions()[_builder.inhibitors()[i].transition].name == *oldname) {
                     const Colored::Arc &inhibArc = _builder.inhibitors()[i];
+                    if (inhibArc.expr != nullptr) {
+                        Colored::EquivalenceVec placePartition;
+                        const Colored::ExpressionContext context{binding, _builder.colors(), placePartition};
+                        const auto multiset = Colored::EvaluationVisitor::evaluate(*inhibArc.expr, context);
+                        const Colored::Color* selected = nullptr;
+                        for (const auto& color : multiset) {
+                            if (color.second == 0) continue;
+                            if (selected != nullptr && selected != color.first) {
+                                throw base_error("An inhibitor arc must select exactly one color");
+                            }
+                            selected = color.first;
+                        }
+
+                        if (selected == nullptr) {
+                            throw base_error("An inhibitor arc must select exactly one color");
+                        }
+
+                        const auto& place = _builder.places()[inhibArc.place];
+                        auto& placeName = _ptplacenames[place.name][selected->getId()];
+                        if (placeName == nullptr || placeName->empty()) {
+                            unfoldPlace(ptBuilder, &place, selected, inhibArc.place, selected->getId());
+                        }
+                        
+                        ptBuilder.addInputArc(_ptplacenames[place.name][selected->getId()], newname, true, inhibArc.inhib_weight);
+                        ++_nptarcs;
+                        continue;
+                    }
                     if (_sumPlacesNames.size() <= inhibArc.place) _sumPlacesNames.resize(inhibArc.place + 1);
                     auto placeName = _sumPlacesNames[inhibArc.place];
 
@@ -207,6 +235,7 @@ namespace PetriEngine {
                         placeName = _sumPlacesNames[inhibArc.place] = std::move(sumPlaceName);
                     }
                     ptBuilder.addInputArc(placeName, newname, true, inhibArc.inhib_weight);
+                    ++_nptarcs;
                 }
             }
         }

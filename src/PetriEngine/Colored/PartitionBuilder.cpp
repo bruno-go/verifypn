@@ -54,6 +54,7 @@ namespace PetriEngine {
                 for(uint32_t j = 0; j < place.type->productSize(); j++){
                     _partition[i].push_back_diagonalTuplePos(false);
                 }
+                _partition[i].setDiagonal(place.inhibitor > 0);
                 _placeQueue.push_back(i);
                 _inQueue[i] = true;
             }

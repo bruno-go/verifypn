@@ -22,13 +22,15 @@ namespace PetriEngine::ExplicitColored {
     };
 
     struct ColoredPetriNetInhibitor {
-        ColoredPetriNetInhibitor(const size_t from, const size_t to, const MarkingCount_t weight)
-            : from(from), to(to), weight(weight) {
+        ColoredPetriNetInhibitor(const size_t from, const size_t to, const MarkingCount_t weight,
+            std::unique_ptr<CompiledArcExpression> expression = nullptr)
+            : from(from), to(to), weight(weight), expression(std::move(expression)) {
         }
 
         uint32_t from;
         uint32_t to;
         MarkingCount_t weight;
+        std::unique_ptr<CompiledArcExpression> expression;
     };
 
     struct ColoredPetriNetArc {
@@ -59,6 +61,7 @@ namespace PetriEngine::ExplicitColored {
         }
 
         void extractInputVariables(Transition_t transition, std::set<Variable_t>& out) const;
+        void extractInhibitorVariables(Transition_t transition, std::set<Variable_t>& out) const;
         void extractGuardVariables(Transition_t transition, std::set<Variable_t>& out) const;
         void extractOutputVariables(Transition_t transition, std::set<Variable_t>& out) const;
         [[nodiscard]] const std::set<Variable_t>& getAllTransitionVariables(Transition_t transition) const;
