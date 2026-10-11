@@ -63,11 +63,14 @@ namespace PetriEngine {
                 for(auto& [lp_tcx, lp] : next_lps){
                     if(!tcx.has_prefix() && !is_child){
                         double lim = static_cast<double>(lp_tcx._next_ops);
+                        //std::cout << "lim: " << lim << "\n";
                         if(lp.isNStepsImpossible(lim, (!context.isDeadlocked() && lp_tcx._next_ops == 1), context, solvetime)){
+                            //std::cout << "1: n step impossible\n";
                             return true;
                         }
                     }else{
                         if(lp.isImpossible(context, solvetime)){
+                            //std::cout << "basic next impossible\n";
                             return true;
                         }
                     }
@@ -79,6 +82,7 @@ namespace PetriEngine {
             if(tcx.enable_F_rule){
                 for(auto& [lp_tcx, lp] : final_lps){
                     if(lp.isImpossible(context, solvetime)){
+                        //std::cout << "basic f impossible\n";
                         return true;
                     }
                     progs.push_back(&lp);
@@ -104,8 +108,10 @@ namespace PetriEngine {
                         perms.emplace_back(std::move(p));
                     }
                     bool final_impossible = LinearProgram::solveFinalConjunctionImpossible(progs, perms, starts, context);
-                    if(final_impossible)
+                    if(final_impossible){
+                        //std::cout << "final impossible\n";
                         return true;
+                    }
                 }else{
                     const auto num_prog = progs.size();
                     const auto num_ivals = ivals.size();
@@ -123,7 +129,7 @@ namespace PetriEngine {
         }
 
         void AbstractProgramCollection::mergeBuffer::compile_program(){
-            assert(!time_path->is_compiled);
+            //assert(!time_path->is_compiled);
             time_path->is_compiled = true;
             //std::cout << "CMP: [" << time_path->free_lps.size() << "," << time_path->final_lps.size() << "," << time_path->next_lps.size() << "," << time_path->global_lps.size() << "]\n";
             if(time_path->global_lps.size() == 0 && time_path->free_lps.size() < 2)
@@ -168,7 +174,8 @@ namespace PetriEngine {
                 }
                 case operator_t::G:{
                     //std::cout << "next ops " << next_ops << "\n";
-                    assert(next_ops == 0);
+                    //std::cout << "apply G\n";
+                   
                     auto& glps = time_path->global_lps;
                     auto& freelps = time_path->free_lps;
                     std::move(freelps.begin(), freelps.end(), std::back_inserter(glps));
@@ -183,9 +190,9 @@ namespace PetriEngine {
                     auto& freelps = time_path->free_lps;
                     auto& nextlps = time_path->next_lps;
                    // std::move(freelps.begin(), freelps.end(), std::back_inserter(flps));
-                   // std::move(nextlps.begin(), nextlps.end(), std::back_inserter(flps));
+                    std::move(nextlps.begin(), nextlps.end(), std::back_inserter(flps));
                    // freelps.clear();
-                   // nextlps.clear();
+                    nextlps.clear();
                     time_path->global_lps.clear();
                     update_next_counter(nextlps, next_ops);
                     update_next_counter(flps, next_ops);
@@ -202,6 +209,7 @@ namespace PetriEngine {
                     freelps.clear();
                     time_path->global_lps.clear();
                     update_next_counter(xlps, next_ops);
+                    update_next_counter(freelps, next_ops);
                     break;
                 }
                 default:
@@ -286,7 +294,7 @@ namespace PetriEngine {
             reset();
             if (context.timeout() || has_empty || solvetime == 0 || tcx.skip_solve()){ 
                 if(context.timeout())
-                    std::cout << "returning from timeout\n";
+                    //std::cout << "returning from timeout\n";
                 return true;
             }
             if (_result != UNKNOWN)
@@ -353,6 +361,7 @@ namespace PetriEngine {
         bool UnionCollection::merge(bool& has_empty, mergeBuffer& buf, temporalContext tcx, bool dry_run)
         {
             //std::cout << "\t union\n";
+            //tcx.push_prefix(_operator, false);
             if (current >= lps.size())
             {
                 current = 0;
@@ -388,7 +397,10 @@ namespace PetriEngine {
         void UnionCollection::satisfiableImpl(const PQL::SimplificationContext& context, temporalContext tcx, uint32_t solvetime)
         {
             //std::cout << "solve union\n";
-            //tcx.update(_operator, _next_ops);
+            tcx.update(_operator, _next_ops);
+            //std::cout << "op" << _operator << "\n";
+            //tcx.push_prefix(_operator, false);
+            //std::cout << "tcx:" << tcx.prefix_F << ", " << tcx.prefix_G << ", " <<  tcx.prefix_X << "\n";
             for (int i = lps.size() - 1; i >= 0; --i)
             {
                 if (lps[i]->satisfiable(context, tcx, solvetime) || context.timeout())
@@ -404,9 +416,7 @@ namespace PetriEngine {
             if (_result != POSSIBLE){
                 //std::cout << "union impossible\n";
                 _result = IMPOSSIBLE;
-            }
-
-            
+            }   
         }
 
         
@@ -492,6 +502,8 @@ namespace PetriEngine {
                 return false;
             }
 
+            //tcx.push_prefix(_operator, false);
+
             bool lempty = false;
             bool more_left;
            
@@ -565,8 +577,14 @@ namespace PetriEngine {
 
         void MergeCollection::satisfiableImpl(const PQL::SimplificationContext& context, temporalContext tcx, uint32_t solvetime)
         {
+            //std::cout << "merge sat\n";
             // this is where the magic needs to happen
             //tcx.update(_operator, _next_ops);
+            //std::cout << "op" << _operator << "\n";
+            //auto pre = tcx.push_prefix(_operator, false);
+            //auto pre_ctx = temporalContext();
+            //pre_ctx.set_prefix(pre);
+            //std::cout << "tcx:" << tcx.prefix_F << ", " << tcx.prefix_G << ", " <<  tcx.prefix_X << "\n";
             bool hasmore = false;
             do {
                 if (context.timeout())
@@ -580,10 +598,13 @@ namespace PetriEngine {
                 bool has_empty = false;
                 mergeBuffer buf = mergeBuffer(tcx, LinearProgram());
 
-                
-                hasmore = merge(has_empty, buf, tcx);
-               
+                auto tmp_ctx = temporalContext();
+                hasmore = merge(has_empty, buf, tmp_ctx);
+
+                //std::cout << "applying " << tcx._operator << "\n";
+                buf.apply_operator(tcx._operator, tcx._next_ops);
                 buf.compile_program();
+                
                 
                 if (has_empty)
                 {
@@ -603,7 +624,6 @@ namespace PetriEngine {
                 }
                 ++nsat;
             } while (hasmore);
-            
             
             if (_result != POSSIBLE)
                 _result = IMPOSSIBLE;
@@ -703,23 +723,26 @@ namespace PetriEngine {
             auto& program = buf.program;
             program.make_union(this->program);
             */
+            temporalContext lp_tcx = temporalContext();
+            lp_tcx._next_ops = tcx._next_ops + _next_ops;
+            lp_tcx._operator = std::min(tcx._operator, _operator);
             timepoint tp = timepoint();
             //auto program_ptr = std::make_shared<LinearProgram>(LinearProgram(this->program));
-            switch(_operator){
+            switch(lp_tcx._operator){
                 case operator_t::FREE:{
-                    tp.free_lps.push_back({tcx, this->program});
+                    tp.free_lps.push_back({lp_tcx, this->program});
                     break;
                 }
                 case operator_t::G:{
-                    tp.global_lps.push_back({tcx, this->program});
+                    tp.global_lps.push_back({lp_tcx, this->program});
                     break;
                 }
                 case operator_t::F:{
-                    tp.final_lps.push_back({tcx, this->program});
+                    tp.final_lps.push_back({lp_tcx, this->program});
                     break;
                 }
                 case operator_t::X:{
-                    tp.next_lps.push_back({tcx, this->program});
+                    tp.next_lps.push_back({lp_tcx, this->program});
                     break;
                 }
                 default:
@@ -744,11 +767,13 @@ namespace PetriEngine {
             //std::cout << "sinsgle program\n";
             // this is where the magic needs to happen
             //tcx.update(_operator, _next_ops);
-            if(context.rules().X_rule && !tcx.has_prefix() && _next_ops >= 1 && _operator >= operator_t::X){
+            auto top = std::min(_operator, tcx._operator);
+            auto tnext_ops = _next_ops + tcx._next_ops;
+            if(context.rules().X_rule && !tcx.has_prefix() && tnext_ops >= 1 && top >= operator_t::X){
                 //std::cout << "next ops " << _next_ops << "\n";
-                double lim = static_cast<double>(_next_ops);
-                //std::cout << "fire limit " << lim << "\n";
-                if (!program.isNStepsImpossible(lim, (!context.isDeadlocked() && _next_ops == 1), context, solvetime))
+                double lim = static_cast<double>(tnext_ops);
+                //std::cout << "sp fire limit " << lim << "\n";
+                if (!program.isNStepsImpossible(lim, (!context.isDeadlocked() && tnext_ops == 1), context, solvetime))
                 {
                     //std::cout << "possible x\n";
                     _result = POSSIBLE;

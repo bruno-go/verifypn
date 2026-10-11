@@ -749,17 +749,17 @@ namespace PetriEngine { namespace PQL {
         }
        
         if (r.formula->isTriviallyTrue() || ((!tcx.has_prefix() || !rules_enabled) && !r.neglps->satisfiable(_context, tcx))) {
-            if(_context.negated()){
-                return Retval(BooleanCondition::FALSE_CONSTANT);
-            }else{
+            //if(_context.negated()){
+            //    return Retval(BooleanCondition::FALSE_CONSTANT);
+            //}else{
                 return Retval(BooleanCondition::TRUE_CONSTANT);
-            }
-        } else if (r.formula->isTriviallyFalse() || (!tcx.has_prefix() && !r.lps->satisfiable(_context, tcx))) {
-            if(_context.negated()){
-                return Retval(BooleanCondition::TRUE_CONSTANT);
-            }else{
+            //}
+        } else if (r.formula->isTriviallyFalse() || ((!tcx.has_prefix() || !rules_enabled) && !r.lps->satisfiable(_context, tcx))) {
+            //if(_context.negated()){
+            //    return Retval(BooleanCondition::TRUE_CONSTANT);
+            //}else{
                 return Retval(BooleanCondition::FALSE_CONSTANT);
-            }
+            //}
         }
         if(_context.rules().X_rule){
             return Retval(std::make_shared<XCondition>(r.formula), r.lps, r.neglps);
@@ -779,9 +779,17 @@ namespace PetriEngine { namespace PQL {
         }
 
         if (r.formula->isTriviallyTrue() || ((!tcx.has_prefix() || !rules_enabled) && !r.neglps->satisfiable(_context, tcx))) {
-            return Retval(BooleanCondition::TRUE_CONSTANT);
+            //if(_context.negated()){
+            //    return Retval(BooleanCondition::FALSE_CONSTANT);
+            //}else{
+                return Retval(BooleanCondition::TRUE_CONSTANT);
+            //}
         } else if (r.formula->isTriviallyFalse() || !r.lps->satisfiable(_context, tcx)) {
-            return Retval(BooleanCondition::FALSE_CONSTANT);
+            //if(_context.negated()){
+            //    return Retval(BooleanCondition::TRUE_CONSTANT);
+            //}else{
+                return Retval(BooleanCondition::FALSE_CONSTANT);
+            //}
         } else {
             if(_context.rules().F_rule && _context.rules().G_rule){
                 return Retval(std::make_shared<GCondition>(r.formula), r.lps, r.neglps);
@@ -802,9 +810,17 @@ namespace PetriEngine { namespace PQL {
         }
 
         if (r.formula->isTriviallyTrue() || !r.neglps->satisfiable(_context, tcx)) {
-            return Retval(BooleanCondition::TRUE_CONSTANT);
+           // if(_context.negated()){
+           //     return Retval(BooleanCondition::FALSE_CONSTANT);
+           // }else{
+                return Retval(BooleanCondition::TRUE_CONSTANT);
+           // }
         } else if (r.formula->isTriviallyFalse() || ((!tcx.has_prefix() || !rules_enabled) && !r.lps->satisfiable(_context, tcx))) {
-            return Retval(BooleanCondition::FALSE_CONSTANT);
+            // if(_context.negated()){
+            //    return Retval(BooleanCondition::TRUE_CONSTANT);
+            //}else{
+                return Retval(BooleanCondition::FALSE_CONSTANT);
+            //}
         } else {
             if(_context.rules().F_rule && _context.rules().G_rule){
                 return Retval(std::make_shared<FCondition>(r.formula), r.lps, r.neglps);
