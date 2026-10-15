@@ -108,6 +108,11 @@ namespace PetriEngine {
                     bool is_empty() const{
                         return next.size() == 0 && !has_conditions();
                     }
+
+
+                    std::shared_ptr<timepoint> clone();
+
+
                     void make_union(LinearProgram& union_lp);
                     void update_next_counter(int next_ops);
                     bool is_impossible(std::vector<LinearProgram*>& progs, std::vector<std::pair<uint32_t, uint32_t>>& ivals, const PQL::SimplificationContext& context, temporalContext& tcx, uint32_t solvetime);
@@ -129,8 +134,10 @@ namespace PetriEngine {
 
                     void advance_timepoint(){
                         assert(time_path);
-                        if(time_path->is_empty())
+                        if(time_path->is_empty()){
+                            std::cout << "empty path\n";
                             return;
+                        }
                         assert(time_path->is_compiled);
                         time_path->is_child = true;
                         // create a new empty timepoint as the current timepoint, and appends the previous one

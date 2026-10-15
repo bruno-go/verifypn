@@ -17,6 +17,23 @@ namespace PetriEngine {
                 suc->print(depth + 1);
         }
 
+        std::shared_ptr<AbstractProgramCollection::timepoint> AbstractProgramCollection::timepoint::clone(){
+            auto tp = std::make_shared<timepoint>(timepoint());
+
+            std::copy(free_lps.begin(), free_lps.end(), std::back_inserter(tp->free_lps));
+            std::copy(final_lps.begin(), final_lps.end(), std::back_inserter(tp->final_lps));
+            std::copy(next_lps.begin(), next_lps.end(), std::back_inserter(tp->next_lps));
+            std::copy(global_lps.begin(), global_lps.end(), std::back_inserter(tp->global_lps));
+
+            tp->is_compiled = is_compiled;
+            tp->is_child = is_child;
+
+            for(auto& suc: next)
+                tp->next.push_back(suc->clone());
+            
+            return tp;
+        }
+
         void AbstractProgramCollection::timepoint::make_union(LinearProgram& union_lp){
             for(auto& [tcx_lp, lp]: free_lps){
                 lp.make_union(union_lp);
@@ -44,6 +61,7 @@ namespace PetriEngine {
 
         bool AbstractProgramCollection::timepoint::is_impossible(std::vector<LinearProgram*>& progs, std::vector<std::pair<uint32_t, uint32_t>>& ivals, const PQL::SimplificationContext& context, temporalContext& tcx, uint32_t solvetime){
             assert(is_compiled);
+            //std::cout << "is_impossible " << progs.size() << "\n" ;
 
             if(!free_lps.empty()){
                 assert(free_lps.size() == 1);
@@ -160,7 +178,10 @@ namespace PetriEngine {
             if(!other.time_path->is_empty() && !other.time_path->has_conditions()){
                 std::cout << "next only path\n";
             }*/
-            std::copy(other.time_path->next.begin(), other.time_path->next.end(), std::back_inserter(time_path->next));
+            //std::copy(other.time_path->next.begin(), other.time_path->next.end(), std::back_inserter(time_path->next));
+            for(auto& suc : other.time_path->next){
+                time_path->next.push_back(suc->clone());
+            }
             std::copy(other.time_path->free_lps.begin(), other.time_path->free_lps.end(), std::back_inserter(time_path->free_lps));
             std::copy(other.time_path->final_lps.begin(), other.time_path->final_lps.end(), std::back_inserter(time_path->final_lps));
             std::copy(other.time_path->global_lps.begin(), other.time_path->global_lps.end(), std::back_inserter(time_path->global_lps));
@@ -360,7 +381,6 @@ namespace PetriEngine {
 
         bool UnionCollection::merge(bool& has_empty, mergeBuffer& buf, temporalContext tcx, bool dry_run)
         {
-            //std::cout << "\t union\n";
             //tcx.push_prefix(_operator, false);
             if (current >= lps.size())
             {
@@ -601,7 +621,7 @@ namespace PetriEngine {
                 auto tmp_ctx = temporalContext();
                 hasmore = merge(has_empty, buf, tmp_ctx);
 
-                //std::cout << "applying " << tcx._operator << "\n";
+                //buf.print();
                 buf.apply_operator(tcx._operator, tcx._next_ops);
                 buf.compile_program();
                 
@@ -613,7 +633,7 @@ namespace PetriEngine {
                 }
                 else
                 {
-                    //std::cout << "merge before solve:\n\t";
+                    //std::cout << "merge before solve:\n";
                     //buf.print();
                     if (context.timeout() ||
                         !buf.lpsImpossible(context, tcx, solvetime))
